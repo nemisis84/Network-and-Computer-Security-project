@@ -9,7 +9,7 @@
 | Number | Name              | User                             | E-mail                                       |
 | -------|-------------------|----------------------------------| ---------------------------------------------|
 | 99195  | Daniel Gomes      | <https://github.com/DanielGomes0>| <mailto:danieljcgomes@tecnico.ulisboa.pt>    |
-| 108924 | Simen Myrrusten   | <https://github.com/Nemesis84>   | <mailto:simen.myrrusten@tecnico.ulisboa.pt>  |
+| 108924 | Simen Myrrusten   | <https://github.com/Nemisis84>   | <mailto:simen.myrrusten@tecnico.ulisboa.pt>  |
 | 33333  | Charlie Security  | <https://github.com/CharlieUser> | <mailto:charlie@tecnico.ulisboa.pt>          |
 
 *(fill table above with team member information)*  
