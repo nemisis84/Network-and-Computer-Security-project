@@ -1,3 +1,4 @@
+package secure_document;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.InvalidKeyException;
@@ -27,6 +28,15 @@ public class HMACCalculator {
             return null;
         }
     }
+    
+    // Helper method to convert a byte array to a hexadecimal string
+    private static String byteArrayToHexString(byte[] array) {
+        StringBuilder hexString = new StringBuilder();
+        for (byte b : array) {
+            hexString.append(String.format("%02x", b));
+        }
+        return hexString.toString();
+    }
 
     public static void main(String[] args) {
         String message = "Hello, world!";
@@ -39,12 +49,4 @@ public class HMACCalculator {
         }
     }
 
-    // Helper method to convert a byte array to a hexadecimal string
-    private static String byteArrayToHexString(byte[] array) {
-        StringBuilder hexString = new StringBuilder();
-        for (byte b : array) {
-            hexString.append(String.format("%02x", b));
-        }
-        return hexString.toString();
-    }
 }
