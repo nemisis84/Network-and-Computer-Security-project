@@ -1,5 +1,3 @@
-package src.secure_document;
-
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -60,9 +58,7 @@ public class Crypto_LIB {
         byte[] cipherBytes = Arrays.copyOfRange(encryptedIVAndText, 16, encryptedIVAndText.length);
         
         IvParameterSpec ivSpec = new IvParameterSpec(iv);
-        System.out.println("IV: " + ivSpec.getIV());
         Cipher cipher = Cipher.getInstance("AES/CTR/NoPadding");
-        System.out.println("Deciphering ...");
         cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec);
 
         byte[] originalBytes = cipher.doFinal(cipherBytes);

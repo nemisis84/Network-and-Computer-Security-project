@@ -1,11 +1,10 @@
-package src.secure_document;
-
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.util.*;
+
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -18,16 +17,15 @@ public class API {
             Gson gson = new Gson();
             JsonObject rootJson = gson.fromJson(fileReader, JsonObject.class);
 
-            String hash_org = Crypto_LIB.Hmac(rootJson.toString(), "bob1234");
-            FileWriter fileWriter = new FileWriter("resources/message.txt");
-            PrintWriter printWriter = new PrintWriter(fileWriter);
-            printWriter.print(hash_org + "\n");
-
+            String HmacPass = "bob1234";
+            String hash_org = Crypto_LIB.Hmac(rootJson.toString(), HmacPass);
+            
             JsonObject media = rootJson.get("media").getAsJsonObject();
             JsonObject mediaContent = media.get("mediaContent").getAsJsonObject();
 
             String audioBase64 = mediaContent.get("audioBase64").getAsString();
             
+            // cipher audio file
             String cipherB64dString = Crypto_LIB.AES_encrypt(audioBase64, "resources/secret.key");
 
             mediaContent.addProperty("audioBase64", cipherB64dString);
@@ -35,19 +33,42 @@ public class API {
             rootJson.add("media", media);
 
             // Write JSON object to file
-            try (FileWriter fileWriter2 = new FileWriter(out_file)) {
+            try (FileWriter fileWriter = new FileWriter(out_file)) {
                 gson = new GsonBuilder().setPrettyPrinting().create();
-                gson.toJson(rootJson, fileWriter2);
+                gson.toJson(rootJson, fileWriter);
             }
 
 
-            String hash_sec = Crypto_LIB.Hmac(rootJson.toString(), "bob1234");
+            FileWriter fileWriter2 = new FileWriter("resources/message.txt");
+            PrintWriter printWriter2 = new PrintWriter(fileWriter2);
+            String hash_sec = Crypto_LIB.Hmac(rootJson.toString(), HmacPass);
             String nonce = "4J8pirLzX6oIF0IIIaUU";  
             String timeStamp = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());  
-            printWriter.print(hash_sec + "\n");
-            printWriter.print(nonce + "\n");  // nonce
-            printWriter.print(timeStamp);  // timestamp
-            printWriter.close();
+            
+            /*List<String> message = new ArrayList<>();
+            message.add(hash_org);
+            message.add(hash_sec);
+            message.add(nonce);
+            message.add(timeStamp);
+            message.add(HmacPass);           
+            printWriter2.print(message); */
+            
+            String message = "";
+            message += hash_org;
+            message += " " + hash_sec;
+            message += " " + nonce;
+            message += " " + timeStamp;
+            message += " " + HmacPass;
+
+            String enc_message = Crypto_LIB.AES_encrypt(message, "resources/secret.key");
+
+            printWriter2.print(enc_message);
+            /*printWriter2.print(hash_org + "\n");
+            printWriter2.print(hash_sec + "\n");
+            printWriter2.print(nonce + "\n");  // nonce
+            printWriter2.print(timeStamp+"\n");  // timestamp
+            printWriter2.print(HmacPass); // pass for Hmac */
+            printWriter2.close();
             
         }
     }
@@ -89,22 +110,26 @@ public class API {
             
             //System.out.println("JSON object: " + rootJson + "\n");
 
-            BufferedReader br= new BufferedReader(new FileReader("Files/message.txt"));
-            String hash_org = br.readLine();
-            String hash_sec = br.readLine();
+            BufferedReader br= new BufferedReader(new FileReader("resources/message.txt"));
+            String enc_message = br.readLine();
             br.close();
-            String hash_read = Crypto_LIB.Hmac(rootJson.toString(), "bob1234");
+            String[] message = Crypto_LIB.AES_decrypt(enc_message, "resources/secret.key").split(" ");
 
-            if(hash_org.equals(hash_read)){//unprotected
+            String hash_org = message[0];
+            String hash_sec = message[1];
+            String HmacKey = message[4];
+            String hash_file = Crypto_LIB.Hmac(rootJson.toString(), HmacKey);
+
+            if(hash_org.equals(hash_file)){//unprotected
                 return 0;
             }
-            else if(hash_sec.equals(hash_read)){//protected
+            else if(hash_sec.equals(hash_file)){//protected
                 return 1;
             }
             else{
                 return -1;
                 
-            }
+            }  
         }
     }
 
@@ -114,27 +139,34 @@ public class API {
     public static void main(String[] args) throws Exception{
         
         if (args.length < 1) {
-            System.err.println("Argument(s) missing!");
+            System.err.println("Argument(s) missing! \nType -Dexec.args=\"help\" to get full information on the possible arguments");
             return;
         }
 
-        if(args[0].equals("protect") || args[0].equals("Protect")){
-            if (args.length < 0) {
+        if(args[0].equals("help")){
+            System.out.println("You must indicate a function to execute and its arguments, as described:\n");
+            System.out.println("-Dexec.args=\"protect [in_file] [out_file]\"   to protect [in_file] and export it as [out_file];\n");
+            System.out.println("-Dexec.args=\"unprotect [in_file] [out_file]\"   to unprotect [in_file] and export it as [out_file];\n");
+            System.out.println("-Dexec.args=\"check [in_file]\"   to heck if [in_file] is protected or not.\n");
+        }
+
+        else if(args[0].equals("protect")){
+            if (args.length < 3) {
                 System.err.println("Argument(s) missing!");
                 return;
             }
 
             System.out.println("Protect()");
-            protect("resources/secure_doc.json", "resources/encrypted_file");
+            protect("resources/" + args[1], "resources/" + args[2]);
         }
         
-        else if(args[0].equals("unprotect") || args[0].equals("Unprotect")){
-            if (args.length < 0) {
+        else if(args[0].equals("unprotect")){
+            if (args.length < 3) {
                 System.err.println("Argument(s) missing!");
                 return;
             }
             System.out.println("Unprotect()");
-            int flag = check("Files/secure_doc.json");
+            int flag = check("resources/" + args[1]);
             if(flag != 1){
                 if(flag == -1){
                     System.out.println("The document was tempered with");
@@ -145,11 +177,15 @@ public class API {
                     return;
                 }
             }
-            unprotect("Files/secure_doc.json", "Files/secure_doc.json");
+            unprotect("resources/" + args[1], "resources/" + args[2]);
         }
 
-        else if(args[0].equals("check") || args[0].equals("Check")){
-            int flag = check("Files/secure_doc.json");
+        else if(args[0].equals("check")){
+            if (args.length < 2) {
+                System.err.println("Argument(s) missing!");
+                return;
+            }
+            int flag = check("resources/" + args[1]);
             if(flag == 1){
                 System.out.println("The document is protected");
                 return;
@@ -165,6 +201,6 @@ public class API {
                 return;
             }
             
-        }
+        } 
     }
 }

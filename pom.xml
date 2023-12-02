@@ -4,7 +4,7 @@
 	<!-- http://maven.apache.org/pom.html#Quick_Overview -->
 
 	<groupId>secure_document</groupId>
-	<artifactId>secure-docs</artifactId>
+	<artifactId>a16-joao-daniel-simen</artifactId>
 	<version>1.0.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
@@ -28,7 +28,7 @@
 
 		<!-- application properties - can be overriden in command line with -D -->
 		<p>secure_document</p>
-		<c>JsonExample</c>
+		<c>API</c>
 		<mainclass>${p}.${c}</mainclass>
 		<!-- arguments are defined in exec plugin -->
 	</properties>
@@ -74,7 +74,7 @@
 
 	<build>
 		<!-- change source code location -->
-		<sourceDirectory>src/</sourceDirectory>
+		<sourceDirectory>src/main/java/secure_document</sourceDirectory>
 
 		<plugins>
 			<!--  Plugin used to compile the sources of your project. Java 9 requires at least version 3.7.0 to properly handle modules. -->
