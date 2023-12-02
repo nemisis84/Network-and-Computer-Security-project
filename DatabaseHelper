@@ -1,0 +1,36 @@
+Commands to install database
+sudo apt update
+sudo apt install postgresql
+sudo apt install postgresql-contrib
+
+Commands to run database
+sudo service postgresql start
+sudo -u postgres psql
+
+Config of the database itself
+
+CREATE DATABASE SongsDatabase;
+
+\c songsdatabase; (when the database is created, it's lower case sensitive for \c)
+
+CREATE TABLE media (
+user_id SERIAL PRIMARY KEY,
+owner VARCHAR(50) NOT NULL,
+format VARCHAR(10) NOT NULL,
+artist VARCHAR(100) NOT NULL,
+title VARCHAR(100) NOT NULL,
+genre1 VARCHAR(100) NOT NULL,
+);
+
+This 3 lines are missing on media table, will have a later implementation adding them, but this is how they'll look like
+genre2 VARCHAR(100),                   
+lyrics VARCHAR(1000) NOT NULL,            
+audiobase64 VARCHAR(1000) NOT NULL
+
+
+INSERT INTO media (owner, format, artist, title, genre1) VALUES
+('eduardo_albino', 'WAV', 'Ed_Sheeran', 'Shape_of_you', 'pop'),
+('antonio_mendes', 'WAV', 'Linkin_Park', 'Numb', 'rock'),
+('joao_bento', 'WAV', 'BMTH', 'Avalanche', 'arena rock');
+
+SELECT * FROM media;
