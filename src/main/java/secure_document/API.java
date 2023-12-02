@@ -145,9 +145,9 @@ public class API {
 
         if(args[0].equals("help")){
             System.out.println("You must indicate a function to execute and its arguments, as described:\n");
-            System.out.println("-Dexec.args=\"protect [in_file] [out_file]\"   to protect [in_file] and export it as [out_file];\n");
-            System.out.println("-Dexec.args=\"unprotect [in_file] [out_file]\"   to unprotect [in_file] and export it as [out_file];\n");
-            System.out.println("-Dexec.args=\"check [in_file]\"   to heck if [in_file] is protected or not.\n");
+            System.out.println("-Dexec.args=\"protect [in_file] [out_file]\" ,  to protect [in_file] and export it as [out_file];\n");
+            System.out.println("-Dexec.args=\"unprotect [in_file] [out_file]\" ,  to unprotect [in_file] and export it as [out_file];\n");
+            System.out.println("-Dexec.args=\"check [in_file]\" ,  to check if [in_file] is protected or not.\n");
         }
 
         else if(args[0].equals("protect")){
