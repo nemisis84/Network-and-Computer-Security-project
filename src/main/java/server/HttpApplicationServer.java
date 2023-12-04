@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 public class HttpApplicationServer {
 
@@ -30,7 +31,7 @@ public class HttpApplicationServer {
         public void handle(HttpExchange exchange) throws IOException {
             if ("GET".equals(exchange.getRequestMethod())) {
                 System.out.println("Received GET request");
-                // Additional processing can be done here
+                // Get data
 
                 String response = "GET request received";
                 exchange.sendResponseHeaders(200, response.length());
@@ -48,7 +49,7 @@ public class HttpApplicationServer {
                 InputStream is = exchange.getRequestBody();
                 String requestBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
                 System.out.println("Received POST request with data: " + requestBody);
-                // Additional processing can be done here
+                // Get Data
 
                 String response = "POST request received";
                 exchange.sendResponseHeaders(200, response.length());
@@ -66,7 +67,7 @@ public class HttpApplicationServer {
                 InputStream is = exchange.getRequestBody();
                 String requestBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
                 System.out.println("Received PUT request with data: " + requestBody);
-                // Additional processing can be done here
+                // Insert into database
 
                 String response = "PUT request received";
                 exchange.sendResponseHeaders(200, response.length());
@@ -82,14 +83,29 @@ public class HttpApplicationServer {
         public void handle(HttpExchange exchange) throws IOException {
             if ("DELETE".equals(exchange.getRequestMethod())) {
                 System.out.println("Received DELETE request");
-                // Additional processing can be done here
-
+                // Delete data
                 String response = "DELETE request received";
                 exchange.sendResponseHeaders(200, response.length());
                 OutputStream os = exchange.getResponseBody();
                 os.write(response.getBytes());
                 os.close();
             }
+        }
+    }
+
+    public void connectToDB(String action, Map content) throws Exception{
+
+        if (action.equals("Get")){
+            // Handle Get
+        }
+        else if (action.equals("Post")){
+            // Handle Get
+        }
+        else if (action.equals("Put")){
+            // Handle Post
+        }
+        else if (action.equals("Delete")){
+            // Handle Delete
         }
     }
 

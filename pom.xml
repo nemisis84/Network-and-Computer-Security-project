@@ -48,6 +48,11 @@
 			<version>${jaxb.version}</version>
 		</dependency>
 		<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<version>42.6.0</version> <!-- Use the latest version available -->
+    	</dependency>
+		<dependency>
 			<groupId>com.sun.xml.bind</groupId>
 			<artifactId>jaxb-core</artifactId>
 			<version>${jaxb.version}</version>
@@ -74,7 +79,7 @@
 
 	<build>
 		<!-- change source code location -->
-		<sourceDirectory>src/main/java/secure_document</sourceDirectory>
+		<sourceDirectory>src/main/java/</sourceDirectory>
 
 		<plugins>
 			<!--  Plugin used to compile the sources of your project. Java 9 requires at least version 3.7.0 to properly handle modules. -->

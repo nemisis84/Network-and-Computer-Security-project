@@ -1,11 +1,15 @@
+package database;
 import java.io.*;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
+
+import secure_document.API;
+
 import java.nio.charset.StandardCharsets;
 import java.net.HttpURLConnection;
 import java.net.URL;
-
 
 public class DatabaseConnector {
     private static final String DB_URL = "jdbc:postgresql://localhost:5432/SongsDatabase";
