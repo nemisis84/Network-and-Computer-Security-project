@@ -5,7 +5,11 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse.BodyHandlers;
-
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Scanner;
+import secure_document.API;
 public class SimpleHttpClient {
 
     private final HttpClient httpClient = HttpClient.newBuilder().build();
@@ -52,30 +56,72 @@ public class SimpleHttpClient {
         return response.body();
     }
 
-    public static void main(String[] args) {
-        SimpleHttpClient client = new SimpleHttpClient();
-        
+    public void CLI(String applicationServer){
+                SimpleHttpClient client = new SimpleHttpClient();
+        Scanner scanner = new Scanner(System.in);
+
         try {
-            String applicationServer = "localhost:8000";
-            // GET request
-            String getResponse = client.sendGetRequest(applicationServer+"/get");
-            System.out.println("GET Response: " + getResponse);
+            boolean running = true;
 
-            // POST request
-            String postResponse = client.sendPostRequest(applicationServer+"/post", "{\"name\":\"value\"}");
-            System.out.println("POST Response: " + postResponse);
+            while (running) {
+                System.out.println("Choose an action: (1) Get song(s), (2) Post a song, (3) Delete a song, (4) Exit");
+                String action = scanner.nextLine();
 
-            // PUT request
-            String putResponse = client.sendPutRequest(applicationServer+"/put", "{\"name\":\"new value\"}");
-            System.out.println("PUT Response: " + putResponse);
+                switch (action) {
+                    case "1": // Get song(s)
+                        System.out.println("Enter the name of the song:");
+                        String songName = scanner.nextLine();
+                        String getResponse = client.sendGetRequest(applicationServer + "/get?name=" + songName);
+                        // if (API.check(getResponse)==1){
+                        //     System.out.println("GET Response: " + getResponse);
+                        // }
+                        // else{
+                        //     System.out.println("Song not authentic");
+                        // }
+                        System.out.println("GET Response: " + getResponse);
+                        break;
 
-            // DELETE request
-            String deleteResponse = client.sendDeleteRequest(applicationServer+"/delete");
-            System.out.println("DELETE Response: " + deleteResponse);
+                    case "2": // Post a song
+                        System.out.println("Enter the path to the song details file (JSON format):");
+                        String filePath = scanner.nextLine();
+                        Path file = Paths.get(filePath);
+                        if (Files.exists(file)) {
+                            String json = Files.readString(file);
+                            String postResponse = client.sendPostRequest(applicationServer + "/post", json);
+                            System.out.println("POST Response: " + postResponse);
+                        } else {
+                            System.out.println("File not found: " + filePath);
+                        }
+                        break;
+
+                    case "3": // Delete a song
+                        System.out.println("Enter the ID of the song to delete:");
+                        String songId = scanner.nextLine();
+                        String deleteResponse = client.sendDeleteRequest(applicationServer + "/delete?id=" + songId);
+                        System.out.println("DELETE Response: " + deleteResponse);
+                        break;
+
+                    case "4": // Exit
+                        running = false;
+                        System.out.println("Exiting...");
+                        break;
+
+                    default:
+                        System.out.println("Invalid action. Please try again.");
+                }
+            }
 
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            scanner.close();
         }
+    }
+
+    public static void main(String[] args) throws Exception {
+        SimpleHttpClient client = new SimpleHttpClient();
+        String applicationServer = "localhost:8000";
+        client.CLI(applicationServer);
     }
 }
 
