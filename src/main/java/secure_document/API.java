@@ -19,8 +19,7 @@ public class API {
             Gson gson = new Gson();
             JsonObject rootJson = gson.fromJson(fileReader, JsonObject.class);
 
-            String HmacPass = "bob1234";
-            String hash_org = Crypto_LIB.Hmac(rootJson.toString(), HmacPass);
+            String hash_org = Crypto_LIB.Hmac(rootJson.toString(), "resources/secret.key");
             
             JsonObject media = rootJson.get("media").getAsJsonObject();
             JsonObject mediaContent = media.get("mediaContent").getAsJsonObject();
@@ -28,7 +27,10 @@ public class API {
             String audioBase64 = mediaContent.get("audioBase64").getAsString();
             
             // cipher audio file
-            String cipherB64dString = Crypto_LIB.AES_encrypt(audioBase64, "resources/secret.key");
+            List<String> cipherB64d = Crypto_LIB.AES_encrypt(audioBase64, "resources/secret.key");
+            String cipherB64dString = cipherB64d.get(0);
+            String IV = cipherB64d.get(1);
+            System.out.println(IV);
 
             mediaContent.addProperty("audioBase64", cipherB64dString);
             media.add("mediaContent", mediaContent);
@@ -43,28 +45,22 @@ public class API {
 
             FileWriter fileWriter2 = new FileWriter("resources/message.txt");
             PrintWriter printWriter2 = new PrintWriter(fileWriter2);
-            String hash_sec = Crypto_LIB.Hmac(rootJson.toString(), HmacPass);
-            String nonce = "4J8pirLzX6oIF0IIIaUU";  
-            String timeStamp = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());  
+            String hash_sec = Crypto_LIB.Hmac(rootJson.toString(), "resources/secret.key");
             
             /*List<String> message = new ArrayList<>();
             message.add(hash_org);
             message.add(hash_sec);
-            message.add(nonce);
-            message.add(timeStamp);
-            message.add(HmacPass);           
             printWriter2.print(message); */
             
             String message = "";
             message += hash_org;
             message += " " + hash_sec;
-            message += " " + nonce;
-            message += " " + timeStamp;
-            message += " " + HmacPass;
+            message += " " + IV;
 
-            String enc_message = Crypto_LIB.AES_encrypt(message, "resources/secret.key");
+            List <String> enc_message = Crypto_LIB.AES_encrypt(message, "resources/secret.key");
 
-            printWriter2.print(enc_message);
+            printWriter2.print(enc_message.get(0));
+            printWriter2.print(" " + enc_message.get(1));
             /*printWriter2.print(hash_org + "\n");
             printWriter2.print(hash_sec + "\n");
             printWriter2.print(nonce + "\n");  // nonce
@@ -75,7 +71,7 @@ public class API {
         }
     }
 
-    public static void unprotect(String in_file, String out_file) throws Exception {
+    public static void unprotect(String in_file, String out_file, String IV) throws Exception {
         
         
         try (FileReader fileReader = new FileReader(in_file)) {
@@ -85,8 +81,10 @@ public class API {
             JsonObject mediaContent = media.get("mediaContent").getAsJsonObject();
 
             String cipherB64dString = mediaContent.get("audioBase64").getAsString();
+
+
             
-            String original = Crypto_LIB.AES_decrypt(cipherB64dString, "resources/secret.key");
+            String original = Crypto_LIB.AES_decrypt(cipherB64dString, IV , "resources/secret.key");
 
             mediaContent.addProperty("audioBase64", original);
             media.add("mediaContent", mediaContent);
@@ -115,12 +113,14 @@ public class API {
             BufferedReader br= new BufferedReader(new FileReader("resources/message.txt"));
             String enc_message = br.readLine();
             br.close();
-            String[] message = Crypto_LIB.AES_decrypt(enc_message, "resources/secret.key").split(" ");
+            String iv_message = enc_message.split(" ")[1];
+            enc_message = enc_message.split(" ")[0];
+            String[] message = Crypto_LIB.AES_decrypt(enc_message, iv_message, "resources/secret.key").split(" ");
 
             String hash_org = message[0];
             String hash_sec = message[1];
-            String HmacKey = message[4];
-            String hash_file = Crypto_LIB.Hmac(rootJson.toString(), HmacKey);
+            //String iv_song = message[2];
+            String hash_file = Crypto_LIB.Hmac(rootJson.toString(), "resources/secret.key");
 
             if(hash_org.equals(hash_file)){//unprotected
                 return 0;
@@ -179,7 +179,7 @@ public class API {
                     return;
                 }
             }
-            unprotect("resources/" + args[1], "resources/" + args[2]);
+            unprotect("resources/" + args[1], "resources/" + args[2], "");
         }
 
         else if(args[0].equals("check")){
