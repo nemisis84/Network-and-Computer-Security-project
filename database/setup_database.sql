@@ -4,7 +4,7 @@
 CREATE DATABASE SongsDatabase;
 
 -- Connect to the SongsDatabase
-\c SongsDatabase
+\c songsdatabase
 
 -- Create the media table
 CREATE TABLE media (
