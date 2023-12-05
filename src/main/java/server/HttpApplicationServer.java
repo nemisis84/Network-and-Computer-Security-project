@@ -3,12 +3,15 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+
 
 public class HttpApplicationServer {
 
@@ -20,6 +23,7 @@ public class HttpApplicationServer {
         server.createContext("/post", new PostHandler());
         server.createContext("/put", new PutHandler());
         server.createContext("/delete", new DeleteHandler());
+        server.createContext("/protect", new ProtectHandler());
 
         server.setExecutor(null); // Creates a default executor
         server.start();
@@ -41,7 +45,28 @@ public class HttpApplicationServer {
             }
         }
     }
+    static class ProtectHandler implements HttpHandler {
+    @Override
+    public void handle(HttpExchange exchange) throws IOException {
+        if ("POST".equals(exchange.getRequestMethod())) {
+            InputStream is = exchange.getRequestBody();
+            String requestBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
 
+            // Save the protected data to a file
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter("resources/protected_data.json"))) {
+                writer.write(requestBody);
+            }
+
+            // Additional processing can be done here
+
+            String response = "Protected data received";
+            exchange.sendResponseHeaders(200, response.length());
+            OutputStream os = exchange.getResponseBody();
+            os.write(response.getBytes());
+            os.close();
+            }
+        }
+    }
     static class PostHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
