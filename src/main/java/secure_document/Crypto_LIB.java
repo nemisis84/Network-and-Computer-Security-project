@@ -3,13 +3,11 @@ package secure_document;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.security.InvalidKeyException;
 import java.security.Key;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 
 import javax.crypto.Cipher;
 import javax.crypto.Mac;
@@ -18,14 +16,15 @@ import javax.crypto.spec.SecretKeySpec;
 
 public class Crypto_LIB {
 
-    public static String Hmac(String target, String key) throws NoSuchAlgorithmException, IllegalStateException, UnsupportedEncodingException, InvalidKeyException{
+    public static String Hmac(String target, String keyPath) throws Exception{
         Mac mac = Mac.getInstance("HmacSHA256");
-            SecretKeySpec HmacKey = new SecretKeySpec(key.getBytes(), "HmacSHA256");
-            mac.init(HmacKey);
-            return byteArrayToHexString(mac.doFinal(target.getBytes("utf-8")));
+        Key HmacKey = readSecretKey(keyPath);
+        //SecretKeySpec HmacKey = new SecretKeySpec(keyPath.getBytes(), "HmacSHA256");
+        mac.init(HmacKey);
+        return byteArrayToHexString(mac.doFinal(target.getBytes("utf-8")));
     }
 
-    public static String AES_encrypt(String target, String keyPath) throws Exception{
+    public static List <String> AES_encrypt(String target, String keyPath) throws Exception{
 
         byte[] audioBytes = target.getBytes();
 
@@ -40,30 +39,33 @@ public class Crypto_LIB {
         cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivSpec);
 
         byte[] encryptedBytes = cipher.doFinal(audioBytes);
-        byte[] encryptedIVAndText = new byte[iv.length + encryptedBytes.length];
-        System.arraycopy(iv, 0, encryptedIVAndText, 0, iv.length);
-        System.arraycopy(encryptedBytes, 0, encryptedIVAndText, iv.length, encryptedBytes.length);
+        //byte[] encryptedIVAndText = new byte[iv.length + encryptedBytes.length];
+        //System.arraycopy(iv, 0, encryptedIVAndText, 0, iv.length);
+        //System.arraycopy(encryptedBytes, 0, encryptedIVAndText, iv.length, encryptedBytes.length);
 
-        String cipherString = Base64.getEncoder().encodeToString(encryptedIVAndText);
+        String cipherString = Base64.getEncoder().encodeToString(encryptedBytes);
+        String iv_send = Base64.getEncoder().encodeToString(iv);
+        
+        List <String> cipherList = new ArrayList<>();
+        cipherList.add(cipherString);
+        cipherList.add(iv_send);
 
-        return cipherString;
+        return cipherList;
         
     }
 
-    public static String AES_decrypt(String target, String keyPath) throws Exception{
+    public static String AES_decrypt(String target, String IV, String keyPath) throws Exception{
 
         Key secretKey = readSecretKey(keyPath);
 
-        byte[] encryptedIVAndText = Base64.getDecoder().decode(target);
-
-        byte[] iv = Arrays.copyOfRange(encryptedIVAndText, 0, 16);
-        byte[] cipherBytes = Arrays.copyOfRange(encryptedIVAndText, 16, encryptedIVAndText.length);
+        byte[] encryptedText = Base64.getDecoder().decode(target);
+        byte[] iv = Base64.getDecoder().decode(IV);
         
         IvParameterSpec ivSpec = new IvParameterSpec(iv);
         Cipher cipher = Cipher.getInstance("AES/CTR/NoPadding");
         cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec);
 
-        byte[] originalBytes = cipher.doFinal(cipherBytes);
+        byte[] originalBytes = cipher.doFinal(encryptedText);
 
         String original = new String(originalBytes);
 
