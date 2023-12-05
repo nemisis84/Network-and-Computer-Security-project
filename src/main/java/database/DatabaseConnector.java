@@ -12,9 +12,9 @@ import java.net.URL;
 import secure_document.API;
 
 public class DatabaseConnector {
-    private static final String DB_URL = "jdbc:postgresql://localhost:5432/SongsDatabase";
-    private static final String USER = "admin";
-    private static final String PASSWORD = "admin123";
+    private static final String DB_URL = "jdbc:postgresql://localhost:5432/songsdatabase";
+    private static final String USER = "postgres";
+    private static final String PASSWORD = "password";
 
     public static void main(String[] args) {
         if (args.length < 5) {
