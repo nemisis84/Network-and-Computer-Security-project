@@ -9,7 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Scanner;
-import secure_document.API;
+import secure_document.API_server;
 public class SimpleHttpClient {
 
     private final HttpClient httpClient = HttpClient.newBuilder().build();

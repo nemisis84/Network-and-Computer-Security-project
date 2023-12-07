@@ -9,7 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-import secure_document.API;
+import secure_document.API_server;
 
 public class DatabaseConnector {
     private static final String DB_URL = "jdbc:postgresql://localhost:5432/songsdatabase";
@@ -35,7 +35,7 @@ public class DatabaseConnector {
             // Establish the database connection
             try (Connection connection = DriverManager.getConnection(DB_URL, USER, PASSWORD)) {
                 // Use the protect function from the API class
-                API.protect("resources/secure_doc.json", "resources/encrypted_file");
+                API_server.protect("resources/secure_doc.json", "resources/encrypted_file");
 
                 // Insert the data into the database
                 try (PreparedStatement preparedStatement = connection.prepareStatement(
