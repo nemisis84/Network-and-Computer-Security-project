@@ -1,0 +1,3 @@
+Run main method:
+
+mvn compile exec:java -Dmainclass=folder.class

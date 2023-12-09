@@ -8,6 +8,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -15,8 +16,11 @@ import java.util.Map;
 
 public class HttpApplicationServer {
 
-    public static void startServer(int port) throws IOException {
-        HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
+    public static void startServer(String IP, int port) throws IOException {
+        InetAddress address = InetAddress.getByName(IP);
+        InetSocketAddress inetSocketAddress = new InetSocketAddress(address, port);
+
+        HttpServer server = HttpServer.create(inetSocketAddress, 0);
 
         // Define contexts for different HTTP methods
         server.createContext("/get", new GetHandler());
@@ -27,7 +31,7 @@ public class HttpApplicationServer {
 
         server.setExecutor(null); // Creates a default executor
         server.start();
-        System.out.println("Server started on port " + port);
+        System.out.println("Server started on " + IP + ":" + port);
     }
 
     static class GetHandler implements HttpHandler {
@@ -136,7 +140,7 @@ public class HttpApplicationServer {
 
     public static void main(String[] args) {
         try {
-            startServer(8000); // Start the server on port 8000
+            startServer("localhost", 80); // Start the server on port 8000
         } catch (IOException e) {
             e.printStackTrace();
         }

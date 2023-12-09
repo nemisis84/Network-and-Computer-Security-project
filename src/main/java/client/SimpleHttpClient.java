@@ -57,16 +57,16 @@ public class SimpleHttpClient {
     }
 
     public void CLI(String applicationServer){
-                SimpleHttpClient client = new SimpleHttpClient();
+        SimpleHttpClient client = new SimpleHttpClient();
         Scanner scanner = new Scanner(System.in);
 
         try {
             boolean running = true;
 
             while (running) {
+                System.out.println("Connecting to " + applicationServer + " ...");
                 System.out.println("Choose an action: (1) Get song(s), (2) Post a song, (3) Delete a song, (4) Exit");
                 String action = scanner.nextLine();
-
                 switch (action) {
                     case "1": // Get song(s)
                         System.out.println("Enter the name of the song:");
@@ -120,7 +120,7 @@ public class SimpleHttpClient {
 
     public static void main(String[] args) throws Exception {
         SimpleHttpClient client = new SimpleHttpClient();
-        String applicationServer = "localhost:8000";
+        String applicationServer = "localhost:80";
         client.CLI(applicationServer);
     }
 }
