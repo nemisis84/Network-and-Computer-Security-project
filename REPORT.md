@@ -25,12 +25,40 @@
 ### 2.2. Infrastructure
 
 #### 2.2.1. Network and Machine Setup
+We have a total of 4 VMs in our infrastructure. The image below shows how the infrastructure is built up:
 
-(_Provide a brief description of the built infrastructure._)
+![Infrastructure](https://github.com/tecnico-sec/a16-joao-daniel-simen/blob/main/network/Infrastructure.png)
+
+For the communication between the instances, we use HTTP. We made all communications using Java libraries. No major framework was used. As we wanted control over the security and the information flow we think this was the best option. Many frameworks handle a lot of the security properties for you, which for the most part is good, but for this project did not make sense. Using simple libraries allowed us to do all the changes we wanted, without managing the configuration and setup of a framework. 
+
+As for the chosen communication protocol, we choose HTTP, because of its familiarity and properties. For a client sending a request in a client-server communication, HTTP is the go-to protocol used in technology today. This easily allows us to request operations which can execute the CRUD operations. One thing to be aware of is that we did not enable clients to update data in the database, as songs are usually immutable. We will now explain the technology and reasoning for each participant:
+
+##### Client
+An HTTP client class is made for asking for songs, adding songs and deleting songs. Built using mainly java.net.http.* packages. A CLI is also provided. This lightweight version of a client was implemented with a focus on being adaptable to a changing application and network. A web interface could also be implemented, but as it would need to be implemented with the security classes already made in Java, this would lead to more complexity. For the project, a simple CLI is sufficient to illustrate the security properties of the application. 
+
+##### Application Server
+
+TODO
+
+#### Database
+
+TODO
+
+
+(_Provide a brief description of the built infrastructure._) DONE
 
 (_Justify the choice of technologies for each server._)
 
 #### 2.2.2. Server Communication Security
+
+One of the ways to secure both the database server and application server was the use of a firewall at the router. The applied rules could be found in /network/router/firewall. We explicitly only allow these communications:
+- Any computer can access the application server with HTTP
+- The application server can communicate with established HTTP connections
+- The application server can initiate a HTTP connection with the database server
+- The database server can communicate with an established HTTP connection with the application server.
+- All other communication won't be forwarded by the router.
+
+This leads to only the application server being exposed to the outside world, while the database can only be accessed by the application server. This will leave some openings for unauthorized access to the database, but with the implementation of session keys, this is prevented. 
 
 (_Discuss how server communications were secured, including the secure channel solutions implemented and any challenges encountered._)
 
