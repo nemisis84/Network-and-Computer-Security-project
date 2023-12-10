@@ -62,9 +62,8 @@ public class SimpleHttpClient {
 
         try {
             boolean running = true;
-
+            System.out.println("Connecting to " + applicationServer + " ...");
             while (running) {
-                System.out.println("Connecting to " + applicationServer + " ...");
                 System.out.println("Choose an action: (1) Get song(s), (2) Post a song, (3) Delete a song, (4) Exit");
                 String action = scanner.nextLine();
                 switch (action) {

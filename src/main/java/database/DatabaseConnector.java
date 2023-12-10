@@ -1,13 +1,19 @@
 package database;
 
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+
 import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.nio.charset.StandardCharsets;
-import java.net.HttpURLConnection;
-import java.net.URL;
 
 import secure_document.API_server;
 
@@ -16,18 +22,7 @@ public class DatabaseConnector {
     private static final String USER = "postgres";
     private static final String PASSWORD = "password";
 
-    public static void main(String[] args) {
-        if (args.length < 5) {
-            System.err.println("Usage: DatabaseConnector <owner> <format> <artist> <title> <genre1>");
-            System.exit(1);
-        }
-
-        String owner = args[0];
-        String format = args[1];
-        String artist = args[2];
-        String title = args[3];
-        String genre1 = args[4];
-
+    public static void serverRequest(String owner, String format, String artist, String title, String genre1) {
         try {
             // Load the PostgreSQL JDBC driver
             Class.forName("org.postgresql.Driver");
@@ -71,9 +66,29 @@ public class DatabaseConnector {
         }
     }
 
+    public static void main(String[] args) {
+        try {
+            startServer("localhost", 8001); // Start the server on port 8001 for database requests
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void startServer(String IP, int port) throws IOException {
+        InetAddress address = InetAddress.getByName(IP);
+        InetSocketAddress inetSocketAddress = new InetSocketAddress(address, port);
+        HttpServer server = HttpServer.create(inetSocketAddress, 0);
+        server.createContext("/execute", new PostHandler());
+        server.createContext("/get", new GetHandler());
+        server.createContext("/delete", new DeleteHandler());
+        server.setExecutor(null);
+        server.start();
+        System.out.println("Database server started on " + IP + ":" + port);
+    }
+
     private static void sendToApplicationServer(String data) {
         try {
-            URL url = new URL("http://localhost:8000/protect");
+            URL url = new URL("http://localhost:8001/protect");
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("POST");
             connection.setDoOutput(true);
@@ -93,4 +108,87 @@ public class DatabaseConnector {
             e.printStackTrace();
         }
     }
+
+    static class PostHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if ("POST".equals(exchange.getRequestMethod())) {
+                // Get the request body
+                String requestBody = new String(exchange.getRequestBody().readAllBytes());
+
+                // Split the request body into parameters
+                String[] params = requestBody.split("&");
+
+                String owner = getValue(params, "owner");
+                String format = getValue(params, "format");
+                String artist = getValue(params, "artist");
+                String title = getValue(params, "title");
+                String genre1 = getValue(params, "genre1");
+
+                // Execute the serverRequest function
+                serverRequest(owner, format, artist, title, genre1);
+
+                // Send a response back to the client
+                String response = "Request executed successfully";
+                exchange.sendResponseHeaders(200, response.length());
+                try (OutputStream os = exchange.getResponseBody()) {
+                    os.write(response.getBytes());
+                }
+            }
+        }
+
+        private String getValue(String[] params, String key) {
+            for (String param : params) {
+                String[] keyValue = param.split("=");
+                if (keyValue.length == 2 && keyValue[0].equals(key)) {
+                    return keyValue[1];
+                }
+            }
+            return null;
+        }
+    }
+
+    static class DeleteHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            System.out.println("Received DELETE request");
+            if ("DELETE".equals(exchange.getRequestMethod())) {
+                
+                // Extract the request URI and query string to print action
+                String requestPath = exchange.getRequestURI().getPath();
+                String queryString = exchange.getRequestURI().getQuery();
+                String request = requestPath + (queryString != null ? "?" + queryString : "");
+                System.out.println("Received DELETE request: "+ request);
+
+                // Delete data from database and return a response
+                String response = "DELETE request Executed";
+                exchange.sendResponseHeaders(200, response.length());
+                OutputStream os = exchange.getResponseBody();
+                os.write(response.getBytes());
+                os.close();
+            }
+        }
+    }
+
+    static class GetHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if ("GET".equals(exchange.getRequestMethod())) {
+                // Extract the request URI and query string to print action
+                String requestPath = exchange.getRequestURI().getPath();
+                String queryString = exchange.getRequestURI().getQuery();
+                String request = requestPath + (queryString != null ? "?" + queryString : "");
+                System.out.println("Received GET request: "+ request);
+
+                String jsonResponse = "{\"json\": \"Response\"}";
+                exchange.getResponseHeaders().set("Content-Type", "application/json");
+                exchange.sendResponseHeaders(200, jsonResponse.length());
+                exchange.getResponseHeaders().set("Content-Type", "application/json");
+                OutputStream os = exchange.getResponseBody();
+                os.write(jsonResponse.getBytes(StandardCharsets.UTF_8));
+                os.close();
+            }
+        }
+    }
+
 }

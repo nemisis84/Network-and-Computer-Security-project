@@ -3,6 +3,8 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
+import client.SimpleHttpClient;
+
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -16,17 +18,16 @@ import java.util.Map;
 
 public class HttpApplicationServer {
 
-    public static void startServer(String IP, int port) throws IOException {
+    public static void startServer(String IP, int port, String DBConnection) throws IOException {
         InetAddress address = InetAddress.getByName(IP);
         InetSocketAddress inetSocketAddress = new InetSocketAddress(address, port);
 
         HttpServer server = HttpServer.create(inetSocketAddress, 0);
 
         // Define contexts for different HTTP methods
-        server.createContext("/get", new GetHandler());
-        server.createContext("/post", new PostHandler());
-        server.createContext("/put", new PutHandler());
-        server.createContext("/delete", new DeleteHandler());
+        server.createContext("/get", new GetHandler(DBConnection));
+        server.createContext("/post", new PostHandler(DBConnection));
+        server.createContext("/delete", new DeleteHandler(DBConnection));
         server.createContext("/protect", new ProtectHandler());
 
         server.setExecutor(null); // Creates a default executor
@@ -34,18 +35,43 @@ public class HttpApplicationServer {
         System.out.println("Server started on " + IP + ":" + port);
     }
 
+
     static class GetHandler implements HttpHandler {
+        
+        String DBConnection;
+        
+        GetHandler(String DBConnection){
+            this.DBConnection = DBConnection;
+        }
+
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             if ("GET".equals(exchange.getRequestMethod())) {
-                System.out.println("Received GET request");
-                // Get data
+                
+                try {
+                    // Get data from DB
 
-                String response = "GET request received";
-                exchange.sendResponseHeaders(200, response.length());
-                OutputStream os = exchange.getResponseBody();
-                os.write(response.getBytes());
-                os.close();
+                    // Extract the request URI and query string
+                    String requestPath = exchange.getRequestURI().getPath();
+                    String queryString = exchange.getRequestURI().getQuery();
+                    String request = requestPath + (queryString != null ? "?" + queryString : "");
+
+                    System.out.println("Received GET request: "+ request);
+
+                    SimpleHttpClient client = new SimpleHttpClient();
+
+                    String response = client.sendGetRequest(this.DBConnection+request);
+                    
+                    // Respond to client
+                    exchange.getResponseHeaders().set("Content-Type", "application/json");
+                    exchange.sendResponseHeaders(200, response.length());
+                    OutputStream os = exchange.getResponseBody();
+                    os.write(response.getBytes(StandardCharsets.UTF_8));
+                    os.close();
+                    System.out.println("Get response: \"" + response + "\" returned to client");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
@@ -68,56 +94,80 @@ public class HttpApplicationServer {
             OutputStream os = exchange.getResponseBody();
             os.write(response.getBytes());
             os.close();
+
             }
         }
     }
     static class PostHandler implements HttpHandler {
+        
+        String DBConnection;
+        
+        PostHandler(String DBConnection){
+            this.DBConnection = DBConnection;
+        }
+
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             if ("POST".equals(exchange.getRequestMethod())) {
+
+                try {
                 InputStream is = exchange.getRequestBody();
                 String requestBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-                System.out.println("Received POST request with data: " + requestBody);
-                // Get Data
+                String requestPath = exchange.getRequestURI().getPath();
+                System.out.println("Received POST request from client");
+                
+                SimpleHttpClient client = new SimpleHttpClient();
+                String response = client.sendPostRequest(this.DBConnection + requestPath, requestBody);
 
-                String response = "POST request received";
                 exchange.sendResponseHeaders(200, response.length());
                 OutputStream os = exchange.getResponseBody();
                 os.write(response.getBytes());
                 os.close();
+                System.out.println("POST response: \"" + response + "\" returned to client");
+            
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
             }
         }
     }
 
-    static class PutHandler implements HttpHandler {
-        @Override
-        public void handle(HttpExchange exchange) throws IOException {
-            if ("PUT".equals(exchange.getRequestMethod())) {
-                InputStream is = exchange.getRequestBody();
-                String requestBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-                System.out.println("Received PUT request with data: " + requestBody);
-                // Insert into database
-
-                String response = "PUT request received";
-                exchange.sendResponseHeaders(200, response.length());
-                OutputStream os = exchange.getResponseBody();
-                os.write(response.getBytes());
-                os.close();
-            }
-        }
-    }
 
     static class DeleteHandler implements HttpHandler {
+        
+        String DBConnection;
+        
+        DeleteHandler(String DBConnection){
+            this.DBConnection = DBConnection;
+        }
+        
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             if ("DELETE".equals(exchange.getRequestMethod())) {
-                System.out.println("Received DELETE request");
-                // Delete data
-                String response = "DELETE request received";
-                exchange.sendResponseHeaders(200, response.length());
-                OutputStream os = exchange.getResponseBody();
-                os.write(response.getBytes());
-                os.close();
+                try {
+
+                    // Extract the request URI and query string
+                    String requestPath = exchange.getRequestURI().getPath();
+                    String queryString = exchange.getRequestURI().getQuery();
+                    String request = requestPath + (queryString != null ? "?" + queryString : "");
+
+                    System.out.println("Received DELETE request: "+ request);
+
+                    SimpleHttpClient client = new SimpleHttpClient();
+                    
+
+                    String response = client.sendDeleteRequest(this.DBConnection+request);
+                    
+                    // Delete data from database and return a response
+                    exchange.sendResponseHeaders(200, response.length());
+                    OutputStream os = exchange.getResponseBody();
+                    os.write(response.getBytes());
+                    os.close();
+                    System.out.println("Delete response: \"" + response + "\" returned to client");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
@@ -140,7 +190,7 @@ public class HttpApplicationServer {
 
     public static void main(String[] args) {
         try {
-            startServer("localhost", 80); // Start the server on port 8000
+            startServer("localhost", 80, "localhost:8001"); // Start the server on port 8000
         } catch (IOException e) {
             e.printStackTrace();
         }
