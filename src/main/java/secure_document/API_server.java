@@ -1,10 +1,13 @@
 package secure_document;
 
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
+import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 import com.google.gson.Gson;
@@ -12,15 +15,15 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 public class API_server {
-    public static List<String> protect(String musicFile, String keyPath) throws Exception {
+    public static String protect(String musicFile, String keyPath) throws Exception {
         
         // produces Hmac of original unprotected song file
         String hash_org = Crypto_LIB.Hmac(musicFile, keyPath);
             
         // cipher audio file
-        List<String> cipherB64d = Crypto_LIB.AES_encrypt(musicFile, keyPath);
-        String cipherFile = cipherB64d.get(0);
-        String iv = cipherB64d.get(1);
+        String cipherB64d = Crypto_LIB.AES_encrypt(musicFile, keyPath);
+        String cipherFile = cipherB64d.split(" ")[0];
+        String iv = cipherB64d.split(" ")[1];
 
         // produces Hmac of protected song file
         String hash_sec = Crypto_LIB.Hmac(cipherFile, keyPath);
@@ -32,17 +35,17 @@ public class API_server {
         send_message += " " + cipherFile;
         send_message += " " + iv;
         
-        List<String> enc_message = Crypto_LIB.AES_encrypt(send_message, keyPath);
+        String enc_message = Crypto_LIB.AES_encrypt(send_message, keyPath);
 
         return enc_message;
             
     }
 
-    public static String unprotect(List<String> message, String keyPath) throws Exception {
+    public static String unprotect(String message, String keyPath) throws Exception {
  
         // receives message cipher and its IV
-        String cipherMessage = message.get(0);
-        String IV_message = message.get(1);
+        String cipherMessage = message.split(" ")[0];
+        String IV_message = message.split(" ")[1];
 
         // decipher message and retreive it
         String clearMessage = Crypto_LIB.AES_decrypt(cipherMessage, IV_message , keyPath);
@@ -99,13 +102,13 @@ public class API_server {
         return 1;
     }
 
-    public static List<String> create_sessionKey(int keySize, String path) throws Exception{
+    public static String create_sessionKey(int keySize, String path) throws Exception{
 
-        String keysent = Crypto_LIB.generateKey(keySize).toString();
+        String keysent = Crypto_LIB.generateKey(keySize);
 
-        List<String> message = Crypto_LIB.AES_encrypt(keysent, "resources/secret.key");
+        String message = Crypto_LIB.AES_encrypt(keysent, path + "/secret.key");
 
-        FileOutputStream fos = new FileOutputStream(path);
+        FileOutputStream fos = new FileOutputStream(path + "/session.key");
         fos.write(keysent.getBytes());
         fos.close();
 
@@ -122,20 +125,18 @@ public class API_server {
         //FileReader fileReader = new FileReader("resources/secure_doc.json");
         //Gson gson = new Gson();
         //JsonObject rootJson = gson.fromJson(fileReader, JsonObject.class);
-        //List<String> enc_message = protect(rootJson.toString(), "resources/clientX_session.key");
+        //String enc_message = protect(rootJson.toString(), "resources/clientX_session.key");
         //System.out.println(enc_message);
 
 
 
         // Simulation of receiving a song from client (artist) to add to database
-        //List<String> message = new ArrayList<>();
-        //message.add("");
-        //message.add("");
+        //String message = "";
         //String songFile = unprotect(message, "resources/clientX_session.key");
 
 
         //generates a secret key and saves it to file
-        //List<String> message = create_sessionKey(256, "resources/clientX_session.key");
+        //String message = create_sessionKey(256, "resources/clientX_session.key");
         //System.out.println(message);
 
     }

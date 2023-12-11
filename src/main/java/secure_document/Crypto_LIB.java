@@ -20,13 +20,14 @@ import javax.crypto.spec.SecretKeySpec;
 
 public class Crypto_LIB {
 
-    public static byte[] generateKey(int keySize) throws NoSuchAlgorithmException{
+    public static String generateKey(int keySize) throws NoSuchAlgorithmException{
 
         KeyGenerator keyGen = KeyGenerator.getInstance("AES");
 
         keyGen.init(keySize);
 
-        return keyGen.generateKey().getEncoded();
+    
+        return Base64.getEncoder().encodeToString(keyGen.generateKey().getEncoded());
     }
 
     public static String Hmac(String target, String keyPath) throws Exception{
@@ -49,30 +50,28 @@ public class Crypto_LIB {
 
     }
 
-    public static List <String> AES_encrypt(String target, String keyPath) throws Exception{
+    public static String AES_encrypt(String target, String keyPath) throws Exception{
 
         byte[] audioBytes = target.getBytes();
 
         Key secretKey = readSecretKey(keyPath);
 
-        Cipher cipher = Cipher.getInstance("AES/CTR/NoPadding");
+        Cipher c = Cipher.getInstance("AES/CTR/NoPadding");
 
         byte[] iv = new byte[16];
         new SecureRandom().nextBytes(iv);
         IvParameterSpec ivSpec = new IvParameterSpec(iv);
 
-        cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivSpec);
+        c.init(Cipher.ENCRYPT_MODE, secretKey, ivSpec);
 
-        byte[] encryptedBytes = cipher.doFinal(audioBytes);
+        byte[] encryptedBytes = c.doFinal(audioBytes);
 
         String cipherString = Base64.getEncoder().encodeToString(encryptedBytes);
         String iv_send = Base64.getEncoder().encodeToString(iv);
         
-        List <String> cipherList = new ArrayList<>();
-        cipherList.add(cipherString);
-        cipherList.add(iv_send);
+        String cipher = cipherString + " " + iv_send;
 
-        return cipherList;
+        return cipher;
         
     }
 
@@ -113,7 +112,7 @@ public class Crypto_LIB {
 
     public static Key readSecretKey(String secretKeyPath) throws Exception {
         byte[] encoded = readFile(secretKeyPath);
-        SecretKeySpec keySpec = new SecretKeySpec(encoded, "AES");
+        SecretKeySpec keySpec = new SecretKeySpec(Base64.getDecoder().decode(encoded), "AES");
         return keySpec;
     }
 }

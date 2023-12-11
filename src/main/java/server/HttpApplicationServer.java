@@ -3,9 +3,11 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
+import secure_document.API_server;
 import client.SimpleHttpClient;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,111 +27,111 @@ public class HttpApplicationServer {
         HttpServer server = HttpServer.create(inetSocketAddress, 0);
 
         // Define contexts for different HTTP methods
-        server.createContext("/get", new GetHandler(DBConnection));
-        server.createContext("/post", new PostHandler(DBConnection));
+
+        server.createContext("/login", new GetLogin());
+        server.createContext("/get", new SongHandler(DBConnection));
+        server.createContext("/post", new SongHandler(DBConnection));
         server.createContext("/delete", new DeleteHandler(DBConnection));
-        server.createContext("/protect", new ProtectHandler());
 
         server.setExecutor(null); // Creates a default executor
         server.start();
         System.out.println("Server started on " + IP + ":" + port);
     }
 
-
-    static class GetHandler implements HttpHandler {
-        
-        String DBConnection;
-        
-        GetHandler(String DBConnection){
-            this.DBConnection = DBConnection;
-        }
-
+    static class GetLogin implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             if ("GET".equals(exchange.getRequestMethod())) {
-                
-                try {
-                    // Get data from DB
+                String clientName = exchange.getRequestURI().toString().split("=")[1];
+                System.out.println("---------------------------------------");
+                System.out.println("Received LOGIN of "+ clientName);
 
-                    // Extract the request URI and query string
-                    String requestPath = exchange.getRequestURI().getPath();
-                    String queryString = exchange.getRequestURI().getQuery();
-                    String request = requestPath + (queryString != null ? "?" + queryString : "");
-
-                    System.out.println("Received GET request: "+ request);
-
-                    SimpleHttpClient client = new SimpleHttpClient();
-
-                    String response = client.sendGetRequest(this.DBConnection+request);
-                    
-                    // Respond to client
-                    exchange.getResponseHeaders().set("Content-Type", "application/json");
-                    exchange.sendResponseHeaders(200, response.length());
-                    OutputStream os = exchange.getResponseBody();
-                    os.write(response.getBytes(StandardCharsets.UTF_8));
-                    os.close();
-                    System.out.println("Get response: \"" + response + "\" returned to client");
-                } catch (Exception e) {
-                    e.printStackTrace();
+                String path = "Clients/"+ clientName;
+                String response = "null";
+                File f = new File(path +"/secret.key");
+                if(f.exists() && !f.isDirectory()) { 
+                    try {
+                        response = API_server.create_sessionKey(256, path);
+                    } catch (Exception e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
                 }
-            }
-        }
-    }
-    static class ProtectHandler implements HttpHandler {
-    @Override
-    public void handle(HttpExchange exchange) throws IOException {
-        if ("POST".equals(exchange.getRequestMethod())) {
-            InputStream is = exchange.getRequestBody();
-            String requestBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
 
-            // Save the protected data to a file
-            try (BufferedWriter writer = new BufferedWriter(new FileWriter("resources/protected_data.json"))) {
-                writer.write(requestBody);
-            }
-
-            // Additional processing can be done here
-
-            String response = "Protected data received";
-            exchange.sendResponseHeaders(200, response.length());
-            OutputStream os = exchange.getResponseBody();
-            os.write(response.getBytes());
-            os.close();
-
-            }
-        }
-    }
-    static class PostHandler implements HttpHandler {
-        
-        String DBConnection;
-        
-        PostHandler(String DBConnection){
-            this.DBConnection = DBConnection;
-        }
-
-        @Override
-        public void handle(HttpExchange exchange) throws IOException {
-            if ("POST".equals(exchange.getRequestMethod())) {
-
-                try {
-                InputStream is = exchange.getRequestBody();
-                String requestBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-                String requestPath = exchange.getRequestURI().getPath();
-                System.out.println("Received POST request from client");
-                
-                SimpleHttpClient client = new SimpleHttpClient();
-                String response = client.sendPostRequest(this.DBConnection + requestPath, requestBody);
 
                 exchange.sendResponseHeaders(200, response.length());
                 OutputStream os = exchange.getResponseBody();
                 os.write(response.getBytes());
                 os.close();
-                System.out.println("POST response: \"" + response + "\" returned to client");
-            
-            } catch (Exception e) {
-                e.printStackTrace();
+                System.out.println("---------------------------------------");
+            }
+        }   
+    }
+
+
+    static class SongHandler implements HttpHandler {
+        String DBConnection;
+        
+        SongHandler(String DBConnection){
+            this.DBConnection = DBConnection;
+        }
+        @Override
+        public void handle(HttpExchange exchange) throws IOException { // client asks for song
+            if ("GET".equals(exchange.getRequestMethod())) {
+                String client = exchange.getRequestURI().toString().split("&")[0].split("=")[1];
+                String song = exchange.getRequestURI().toString().split("&")[1].split("=")[1];
+                System.out.println("---------------------------------------");
+                System.out.println("Received GET request from client " + client + " for the song named " + song);
+    
+                String response = null;
+                try {
+                    // Extract the request URI string
+                    String request = exchange.getRequestURI().toString();
+
+                    System.out.println("Received GET request: "+ request);
+
+                    SimpleHttpClient serverClient = new SimpleHttpClient();
+
+                    String DBResponse = serverClient.sendGetRequest(this.DBConnection+request);
+
+                    response = API_server.protect(DBResponse, "Clients/" + client + "/session.key");
+                } catch (Exception e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+
+                exchange.sendResponseHeaders(200, response.length());
+                OutputStream os = exchange.getResponseBody();
+                os.write(response.getBytes());
+                os.close();
+                System.out.println("---------------------------------------");
             }
 
+            else if("POST".equals(exchange.getRequestMethod())){ // artist post song
+                System.out.println("---------------------------------------");
+                String client = exchange.getRequestURI().toString().split("&")[0].split("=")[1];
+                String songName = exchange.getRequestURI().toString().split("&")[1].split("=")[1];
+                System.out.println("Received POST request from client " + client);
+
+                InputStream is = exchange.getRequestBody();
+                String requestBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+                try {
+                    requestBody = API_server.unprotect(requestBody, "Clients/" + client + "/session.key");
+                    String requestPath = "/post?id=" + client + "&song=" + songName;
+                    SimpleHttpClient serverClient = new SimpleHttpClient();
+                    String response = serverClient.sendPostRequest(this.DBConnection + requestPath, requestBody);
+                     exchange.sendResponseHeaders(200, response.length());
+                    OutputStream os = exchange.getResponseBody();
+                    os.write(response.getBytes());
+                    os.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+               
+                System.out.println("---------------------------------------");
             }
+
         }
     }
 
@@ -147,15 +149,12 @@ public class HttpApplicationServer {
             if ("DELETE".equals(exchange.getRequestMethod())) {
                 try {
 
-                    // Extract the request URI and query string
-                    String requestPath = exchange.getRequestURI().getPath();
-                    String queryString = exchange.getRequestURI().getQuery();
-                    String request = requestPath + (queryString != null ? "?" + queryString : "");
+                    // Extract the request URI string
+                    String request = exchange.getRequestURI().toString();
 
                     System.out.println("Received DELETE request: "+ request);
 
                     SimpleHttpClient client = new SimpleHttpClient();
-                    
 
                     String response = client.sendDeleteRequest(this.DBConnection+request);
                     
@@ -195,4 +194,5 @@ public class HttpApplicationServer {
             e.printStackTrace();
         }
     }
+
 }

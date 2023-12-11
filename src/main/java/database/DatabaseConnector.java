@@ -13,7 +13,9 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 import secure_document.API_server;
 
@@ -66,19 +68,11 @@ public class DatabaseConnector {
         }
     }
 
-    public static void main(String[] args) {
-        try {
-            startServer("localhost", 8001); // Start the server on port 8001 for database requests
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     private static void startServer(String IP, int port) throws IOException {
         InetAddress address = InetAddress.getByName(IP);
         InetSocketAddress inetSocketAddress = new InetSocketAddress(address, port);
         HttpServer server = HttpServer.create(inetSocketAddress, 0);
-        server.createContext("/execute", new PostHandler());
+        server.createContext("/post", new PostHandler());
         server.createContext("/get", new GetHandler());
         server.createContext("/delete", new DeleteHandler());
         server.setExecutor(null);
@@ -114,22 +108,26 @@ public class DatabaseConnector {
         public void handle(HttpExchange exchange) throws IOException {
             if ("POST".equals(exchange.getRequestMethod())) {
                 // Get the request body
-                String requestBody = new String(exchange.getRequestBody().readAllBytes());
+                InputStream is = exchange.getRequestBody();
+                String file = new String(is.readAllBytes(), StandardCharsets.UTF_8);
 
-                // Split the request body into parameters
-                String[] params = requestBody.split("&");
+                String owner = exchange.getRequestURI().toString().split("&")[0].split("=")[1];
+                String title = exchange.getRequestURI().toString().split("&")[1].split("=")[1];
 
-                String owner = getValue(params, "owner");
-                String format = getValue(params, "format");
-                String artist = getValue(params, "artist");
-                String title = getValue(params, "title");
-                String genre1 = getValue(params, "genre1");
+                String response = null;
+                String SQL = "INSERT INTO media (owner, title, file) VALUES ('" + owner + "', '" + title + "', '" + file + "');";
+                try (Connection connection = DriverManager.getConnection(DB_URL, USER, PASSWORD)) {
+                    
+                    PreparedStatement stmt = connection.prepareStatement(SQL);
+                    stmt.executeUpdate();
+                    response = "Request executed successfully";
 
-                // Execute the serverRequest function
-                serverRequest(owner, format, artist, title, genre1);
+                } catch (SQLException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
 
                 // Send a response back to the client
-                String response = "Request executed successfully";
                 exchange.sendResponseHeaders(200, response.length());
                 try (OutputStream os = exchange.getResponseBody()) {
                     os.write(response.getBytes());
@@ -155,13 +153,29 @@ public class DatabaseConnector {
             if ("DELETE".equals(exchange.getRequestMethod())) {
                 
                 // Extract the request URI and query string to print action
-                String requestPath = exchange.getRequestURI().getPath();
-                String queryString = exchange.getRequestURI().getQuery();
-                String request = requestPath + (queryString != null ? "?" + queryString : "");
-                System.out.println("Received DELETE request: "+ request);
+                String owner = exchange.getRequestURI().toString().split("&")[0].split("=")[1];
+                String title = exchange.getRequestURI().toString().split("&")[1].split("=")[1];
+
+                String response = null;
+                String SQL = "DELETE FROM media WHERE owner = '" + owner + "' AND title = '" + title + "';";
+                try (Connection connection = DriverManager.getConnection(DB_URL, USER, PASSWORD)) {
+                    
+                    PreparedStatement stmt = connection.prepareStatement(SQL);
+                    stmt.executeUpdate();
+                    response = "Request executed successfully";
+
+                } catch (SQLException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+
+                // Send a response back to the client
+                exchange.sendResponseHeaders(200, response.length());
+                try (OutputStream os = exchange.getResponseBody()) {
+                    os.write(response.getBytes());
+                }
 
                 // Delete data from database and return a response
-                String response = "DELETE request Executed";
                 exchange.sendResponseHeaders(200, response.length());
                 OutputStream os = exchange.getResponseBody();
                 os.write(response.getBytes());
@@ -174,13 +188,30 @@ public class DatabaseConnector {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             if ("GET".equals(exchange.getRequestMethod())) {
-                // Extract the request URI and query string to print action
-                String requestPath = exchange.getRequestURI().getPath();
-                String queryString = exchange.getRequestURI().getQuery();
-                String request = requestPath + (queryString != null ? "?" + queryString : "");
+
+                String client = exchange.getRequestURI().toString().split("&")[0].split("=")[1];
+                String songName = exchange.getRequestURI().toString().split("&")[1].split("=")[1];
+                String request = exchange.getRequestURI().toString();
                 System.out.println("Received GET request: "+ request);
 
-                String jsonResponse = "{\"json\": \"Response\"}";
+                String SQL = "SELECT * FROM media WHERE owner = '" + client + "' AND title = '" + songName + "';"; 
+                String jsonResponse = null;
+
+                try (Connection connection = DriverManager.getConnection(DB_URL, USER, PASSWORD)) {
+                    
+                    Statement stmt = connection.createStatement();
+                    ResultSet rs = stmt.executeQuery(SQL);
+                    if (rs.next()) {
+
+                        jsonResponse = rs.getString("file");
+
+                    }
+
+                } catch (SQLException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                
                 exchange.getResponseHeaders().set("Content-Type", "application/json");
                 exchange.sendResponseHeaders(200, jsonResponse.length());
                 exchange.getResponseHeaders().set("Content-Type", "application/json");
@@ -190,5 +221,15 @@ public class DatabaseConnector {
             }
         }
     }
+
+    public static void main(String[] args) {
+        try {
+            startServer("localhost", 8001); // Start the server on port 8001 for database requests
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
 
 }
