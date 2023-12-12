@@ -38,7 +38,8 @@ An HTTP client class is made for asking for songs, adding songs and deleting son
 
 ##### Application Server
 
-TODO
+We manually created a HTTP server, as it was enough for our needs, and allowed for good flexibility and responsiveness. Implementing a framework would make it easier, but would flaw our security objetives/challenges as it does the job for us.
+TO ELABORATE
 
 #### Database
 
