@@ -42,7 +42,7 @@ TODO
 
 #### Database
 
-TODO
+We chose PostgreSQL as our database due to its open-source nature and simple to use and deploy. The extensive community support was also an import aspect as well as aligning with our project's requirements, ensuring security, and flexibility.
 
 
 (_Provide a brief description of the built infrastructure._) DONE
