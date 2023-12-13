@@ -20,7 +20,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import secure_document.API_client;
-import secure_document.API_server;
 
 public class SimpleHttpClient {
 
@@ -236,7 +235,7 @@ public class SimpleHttpClient {
                         songName = scanner.nextLine();
                         response = this.sendGetRequest(applicationServer + "/get?id=" + ClientName + "&" + "song=" + songName);
 
-                        if(response.equals("No")){ 
+                        if(response == null){ 
                             System.out.println("No music in the database with name: " + songName);
                             break;
                         }
