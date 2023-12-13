@@ -1,6 +1,5 @@
 package secure_document;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
@@ -16,7 +15,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 public class API_server {
-    public static String protect(String musicFile, String keyPath, String sesskeyPath) throws Exception {
+    public static String protect(String musicFile, String keyPath) throws Exception {
         
         // produces Hmac of original unprotected song file
         String hash_org = Crypto_LIB.Hmac(musicFile, keyPath);
@@ -36,20 +35,20 @@ public class API_server {
         send_message += " " + cipherFile;
         send_message += " " + iv;
         
-        String enc_message = Crypto_LIB.AES_encrypt(send_message, sesskeyPath);
+        String enc_message = Crypto_LIB.AES_encrypt(send_message, keyPath);
 
         return enc_message;
             
     }
 
-    public static String unprotect(String message, String keyPath, String sesskeyPath) throws Exception {
+    public static String unprotect(String message, String keyPath) throws Exception {
  
         // receives message cipher and its IV
         String cipherMessage = message.split(" ")[0];
         String IV_message = message.split(" ")[1];
 
         // decipher message and retreive it
-        String clearMessage = Crypto_LIB.AES_decrypt(cipherMessage, IV_message , sesskeyPath);
+        String clearMessage = Crypto_LIB.AES_decrypt(cipherMessage, IV_message , keyPath);
         String hash_org = clearMessage.split(" ")[0];
         String hash_sec = clearMessage.split(" ")[1];
         String cipherFile = clearMessage.split(" ")[2];
@@ -103,30 +102,30 @@ public class API_server {
         return 1;
     }
 
-    public static void createKey(int keySize, String store_path) throws Exception{
+    public static String create_secretKey(int keySize, String path) throws Exception{
 
         String keysent = Crypto_LIB.generateKey(keySize);
 
-        FileOutputStream fos = new FileOutputStream(store_path);
+        FileOutputStream fos = new FileOutputStream(path + "/secret.key");
         fos.write(keysent.getBytes());
         fos.close();
 
+        return keysent;
     }
 
-    public static String readKey(String keyPath, String enckey_path) throws Exception{
+    public static String create_sessionKey(int keySize, String path) throws Exception{
 
-        File f = new File(keyPath);
-        Scanner myReader = new Scanner(f);
-        String keysent = myReader.nextLine();
-        myReader.close();
+        String keysent = Crypto_LIB.generateKey(keySize);
 
-        String message = keysent;
-        if(enckey_path != null)
-            message = Crypto_LIB.AES_encrypt(keysent, enckey_path);
+        String message = Crypto_LIB.AES_encrypt(keysent, path + "/secret.key");
+
+        FileOutputStream fos = new FileOutputStream(path + "/session.key");
+        fos.write(keysent.getBytes());
+        fos.close();
 
         return message;
     }
-
+    
     public static void main(String[] args) throws Exception{
 
 
