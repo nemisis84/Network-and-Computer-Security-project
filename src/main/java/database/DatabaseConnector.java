@@ -50,7 +50,7 @@ public class DatabaseConnector {
                 System.out.println("Received GET request: "+ request);
 
                 String SQL = "SELECT * FROM media WHERE owner = '" + client + "' AND title = '" + songName + "';"; 
-                String jsonResponse = null;
+                String jsonResponse = "Music not found";
 
                 try (Connection connection = DriverManager.getConnection(DB_URL, USER, PASSWORD)) {
                     
@@ -89,7 +89,7 @@ public class DatabaseConnector {
 
                 String response = null;
                 
-                String SQL = "SELECT * FROM media WHERE owner = '" + owner + "' AND title = '" + title + "' AND title = '" + file + "';"; 
+                String SQL = "SELECT * FROM media WHERE owner = '" + owner + "' AND title = '" + title + "' AND file = '" + file + "';"; 
                 try (Connection connection = DriverManager.getConnection(DB_URL, USER, PASSWORD)) {
                     
                     Statement stmt = connection.createStatement();
@@ -205,11 +205,11 @@ public class DatabaseConnector {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
 
-            String fam = exchange.getRequestURI().toString().split("&")[1].split("=")[1];
+            String fam = exchange.getRequestURI().toString().split("=")[1];
             String request = exchange.getRequestURI().toString();
             System.out.println("Received DUPLICATES request: "+ request);
 
-            String SQL = "DELETE FROM media WHERE id IN (SELECT id FROM (SELECT id, ROW_NUMBER() OVER( PARTITION BY owner = '" + fam + "', title, file ORDER BY  id ) AS row_num FROM table_name ) t WHERE t.row_num > 1 );"; 
+            String SQL = "DELETE FROM media WHERE user_id IN (SELECT user_id FROM (SELECT user_id, ROW_NUMBER() OVER( PARTITION BY owner = '" + fam + "', title, file ORDER BY  user_id ) AS row_num FROM media ) t WHERE t.row_num > 1 );"; 
             System.out.println(SQL);
 
             int update_values = 0;
