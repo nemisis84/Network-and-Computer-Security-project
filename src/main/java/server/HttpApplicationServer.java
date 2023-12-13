@@ -203,6 +203,7 @@ public class HttpApplicationServer {
             String type = myReader.nextLine();
             myReader.close();
             String enckeypath;
+            String sessionkeypath = "Clients/" + client + "/session.key";
             if(type.equals("NORMAL")){
                 enckeypath = "Clients/" + client + "/secret.key";
             }
@@ -224,7 +225,7 @@ public class HttpApplicationServer {
                 String response = null;
                 try {
                     // Extract the request URI string
-                    String request = exchange.getRequestURI().toString();
+                    String request = "/get?id=" + client + "&song=" + songName;
 
                     System.out.println("Received GET request: "+ request);
 
@@ -232,7 +233,12 @@ public class HttpApplicationServer {
 
                     String DBResponse = serverClient.sendGetRequest(this.DBConnection+request);
 
-                    response = API_server.protect(DBResponse, enckeypath, "Clients/" + client + "/session.key");
+                    if (DBResponse.equals("Music not found")) {
+                        response = "No";
+                    }
+                    else {
+                        response = API_server.protect(DBResponse, enckeypath, sessionkeypath);
+                    }
                 } catch (Exception e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
@@ -252,7 +258,7 @@ public class HttpApplicationServer {
                 InputStream is = exchange.getRequestBody();
                 String requestBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
                 try {
-                    requestBody = API_server.unprotect(requestBody, enckeypath, "Clients/" + client + "/session.key");
+                    requestBody = API_server.unprotect(requestBody, enckeypath, sessionkeypath);
                     String requestPath = "/post?id=" + client + "&song=" + songName;
                     SimpleHttpClient serverClient = new SimpleHttpClient();
                     String response = serverClient.sendPostRequest(this.DBConnection + requestPath, requestBody);
