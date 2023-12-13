@@ -18,18 +18,20 @@ import com.google.gson.JsonParser;
 
 public class API_client {
 
-    public static void unprotect(String message, String keyPath) throws Exception {
+    public static void unprotect(String message, String keyPath, String sesskeyPath) throws Exception {
         
         String out_file = "Music/";
 
         String cipherMessage = message.split(" ")[0];
         String IV_message = message.split(" ")[1];
 
-        String clearMessage = Crypto_LIB.AES_decrypt(cipherMessage, IV_message , keyPath);
+        String clearMessage = Crypto_LIB.AES_decrypt(cipherMessage, IV_message , sesskeyPath);
         String hash_org = clearMessage.split(" ")[0];
         String hash_sec = clearMessage.split(" ")[1];
         String cipherFile = clearMessage.split(" ")[2];
         String ivFile = clearMessage.split(" ")[3];
+
+        
 
         //check() the confidentiality 
         if(Crypto_LIB.check(cipherFile, hash_sec, keyPath) == -1){
@@ -49,7 +51,7 @@ public class API_client {
         
     }
 
-    public static String protect(String songFilePath, String keyPath) throws Exception{
+    public static String protect(String songFilePath, String keyPath, String sesskeyPath) throws Exception{
 
         FileReader fileReader = new FileReader(songFilePath);
         Gson gson = new Gson();
@@ -74,7 +76,7 @@ public class API_client {
         send_message += " " + cipherFile;
         send_message += " " + iv;
         
-        String enc_message = Crypto_LIB.AES_encrypt(send_message, keyPath);
+        String enc_message = Crypto_LIB.AES_encrypt(send_message, sesskeyPath);
 
         return enc_message;
                     
@@ -112,12 +114,19 @@ public class API_client {
 
     }
 
-    public static void save_sessionKey_toFile(String message, String path) throws Exception{
-        String clearMessage = Crypto_LIB.AES_decrypt(message.split(" ")[0], message.split(" ")[1] , path + "/secret.key");
+    public static void saveKey_toFile(String message, String key_path, String store_path) throws Exception{
+        
+        String clearMessage = null;
+        if(key_path == null){
+            clearMessage = message;
+        }
+        else{
+            clearMessage = Crypto_LIB.AES_decrypt(message.split(" ")[0], message.split(" ")[1] , key_path);
+        }
         
         byte[] key = clearMessage.getBytes();
         
-        FileOutputStream fos = new FileOutputStream(path + "/session.key");
+        FileOutputStream fos = new FileOutputStream(store_path);
         fos.write(key);
         fos.close();
     }
