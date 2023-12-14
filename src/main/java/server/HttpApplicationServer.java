@@ -1,13 +1,4 @@
 package server;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
-
-import secure_document.API_server;
-import secure_document.Crypto_LIB;
-import client.SimpleHttpClient;
-
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -19,9 +10,15 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Comparator;
 import java.util.Map;
 import java.util.Scanner;
+
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+
+import client.SimpleHttpClient;
+import secure_document.API_server;
 
 
 public class HttpApplicationServer {
@@ -242,7 +239,7 @@ public class HttpApplicationServer {
                 } catch (Exception e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
-                }
+                } 
 
                 exchange.sendResponseHeaders(200, response.length());
                 OutputStream os = exchange.getResponseBody();
@@ -257,6 +254,7 @@ public class HttpApplicationServer {
 
                 InputStream is = exchange.getRequestBody();
                 String requestBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+                
                 try {
                     requestBody = API_server.unprotect(requestBody, enckeypath, sessionkeypath);
                     String requestPath = "/post?id=" + client + "&song=" + songName;
@@ -268,7 +266,7 @@ public class HttpApplicationServer {
                     os.close();
                 } catch (Exception e) {
                     e.printStackTrace();
-                }
+                } 
 
                
                 System.out.println("---------------------------------------");
@@ -598,4 +596,5 @@ public class HttpApplicationServer {
         }
     }
 
+    public static String musicFILE = "{\"media\": {\"mediaInfo\": {\"owner\": \"Bob\",\"format\": \"mp3\",\"artist\": \"Alison Chains\",\"title\": \"Man in the Bin\",\"genre\": [\"Grunge\",\"Alternative Metal\"]},\"mediaContent\": {\"lyrics\": [\"Trapped in a world, a box of my own\",\"Container whispers, in this space alone\",\"Echoes of silence, in the walls I confide\",\"A man in the box, with nowhere to hide\",\"Chained by thoughts, in a silent uproar\",\"Searching for keys, to unlock the door\"],\"audioBase64\": \"YWJkYw==\"}}}";
 }

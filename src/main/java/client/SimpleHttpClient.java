@@ -240,8 +240,9 @@ public class SimpleHttpClient {
                             System.out.println("No music in the database with name: " + songName);
                             break;
                         }
+
                         
-                        if(type == "NORMAL")
+                        if(type.equals("NORMAL"))
                             API_client.unprotect(response, secretkey_path, sessionkey_path);
                         else
                             API_client.unprotect(response, familykey_path, sessionkey_path);

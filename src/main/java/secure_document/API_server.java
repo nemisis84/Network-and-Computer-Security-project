@@ -16,59 +16,68 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 public class API_server {
-    public static String protect(String musicFile, String keyPath, String sesskeyPath) throws Exception {
+
+    public static String encrypt_message(String message, String key) throws Exception{
+
+        return Crypto_LIB.AES_encrypt(message, key);
+
+    }
+
+    public static String decrypt_message(String message, String key) throws Exception{
+
+        String cipher = message.split(" ")[0];
+        String IV = message.split(" ")[1];
+        return Crypto_LIB.AES_decrypt(cipher, IV, key);
+
+    }
+
+    public static String protect(String File, String keyPath, String sesskeyPath) throws Exception {
         
-        // produces Hmac of original unprotected song file
-        String hash_org = Crypto_LIB.Hmac(musicFile, keyPath);
-            
+        JsonObject jsonObject = JsonParser.parseString(File).getAsJsonObject();
+        String music = jsonObject.getAsJsonObject("media").getAsJsonObject("mediaContent").get("audioBase64").getAsString();
+        
         // cipher audio file
-        String cipherB64d = Crypto_LIB.AES_encrypt(musicFile, keyPath);
-        String cipherFile = cipherB64d.split(" ")[0];
+        String cipherB64d = Crypto_LIB.AES_encrypt(music, keyPath);
+        String musicEnc = cipherB64d.split(" ")[0];
         String iv = cipherB64d.split(" ")[1];
 
+        jsonObject.getAsJsonObject("media").getAsJsonObject("mediaContent").addProperty("audioBase64", musicEnc);
+        String protected_file = jsonObject.toString();
+
         // produces Hmac of protected song file
-        String hash_sec = Crypto_LIB.Hmac(cipherFile, keyPath);
-        
+        String hash_protected = Crypto_LIB.Hmac(protected_file, keyPath);
 
-        String send_message = "";
-        send_message += hash_org;
-        send_message += " " + hash_sec;
-        send_message += " " + cipherFile;
-        send_message += " " + iv;
-        
-        String enc_message = Crypto_LIB.AES_encrypt(send_message, sesskeyPath);
+        String send_message = hash_protected;
+        send_message += "\n" + protected_file;
+        send_message += "\n" + iv;
 
-        return enc_message;
+        
+        return encrypt_message(send_message, sesskeyPath);
             
     }
 
     public static String unprotect(String message, String keyPath, String sesskeyPath) throws Exception {
  
-        // receives message cipher and its IV
-        String cipherMessage = message.split(" ")[0];
-        String IV_message = message.split(" ")[1];
-
+        
         // decipher message and retreive it
-        String clearMessage = Crypto_LIB.AES_decrypt(cipherMessage, IV_message , sesskeyPath);
-        String hash_org = clearMessage.split(" ")[0];
-        String hash_sec = clearMessage.split(" ")[1];
-        String cipherFile = clearMessage.split(" ")[2];
-        String ivFile = clearMessage.split(" ")[3];
-
-        // check the confidentiality
-        if(Crypto_LIB.check(cipherFile, hash_sec, keyPath) == -1){
-            System.err.println("The encryption file is not correct.");
-            return null;
-        }
-
-        // decypher song file
-        String songFile = Crypto_LIB.AES_decrypt(cipherFile, ivFile, keyPath);
+        String clearMessage = decrypt_message(message , sesskeyPath);
+        String hash_protected = clearMessage.split("\n")[0];
+        String protected_file = clearMessage.split("\n")[1];
+        String ivFile = clearMessage.split("\n")[2];
 
         // check the autenticity
-        if(Crypto_LIB.check(songFile, hash_org, keyPath) == -1){
-            System.err.println("The song file is unautentic.");
+        if(Crypto_LIB.check(protected_file, hash_protected, keyPath) == -1){
+            System.err.println("The file is not autenthic");
             return null;
         }
+
+        JsonObject jsonObject = JsonParser.parseString(protected_file).getAsJsonObject();
+        String musicEnc = jsonObject.getAsJsonObject("media").getAsJsonObject("mediaContent").get("audioBase64").getAsString();
+        
+        String music = Crypto_LIB.AES_decrypt(musicEnc, ivFile, keyPath);
+
+        jsonObject.getAsJsonObject("media").getAsJsonObject("mediaContent").addProperty("audioBase64", music);
+        String songFile = jsonObject.toString();
 
         // check if the song is compatible with our database
         if(check_song_content(songFile) == -1){
@@ -128,28 +137,6 @@ public class API_server {
     }
 
     public static void main(String[] args) throws Exception{
-
-
-        // TO RUN: mvn compile exec:java -Dmainclass=secure_document.API_server
-
-
-        // Simulation of receiving data from database and protecting it to sendo to the client
-        //FileReader fileReader = new FileReader("resources/secure_doc.json");
-        //Gson gson = new Gson();
-        //JsonObject rootJson = gson.fromJson(fileReader, JsonObject.class);
-        //String enc_message = protect(rootJson.toString(), "resources/clientX_session.key");
-        //System.out.println(enc_message);
-
-
-
-        // Simulation of receiving a song from client (artist) to add to database
-        //String message = "";
-        //String songFile = unprotect(message, "resources/clientX_session.key");
-
-
-        //generates a secret key and saves it to file
-        //String message = create_sessionKey(256, "resources/clientX_session.key");
-        //System.out.println(message);
 
     }
 }
