@@ -7,9 +7,8 @@ Commands to run database
 sudo service postgresql start
 sudo -u postgres psql
 
-To be implemented later:
+Change password and password:
 
-This 3 lines are missing on media table, will have a later implementation adding them, but this is how they'll look like
-genre2 VARCHAR(100),                   
-lyrics VARCHAR(1000) NOT NULL,            
-audiobase64 VARCHAR(1000) NOT NULL
+\password postgres
+password
+password

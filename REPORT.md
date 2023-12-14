@@ -12,6 +12,24 @@
 
 #### 2.1.1. Design
 
+We have one shared secret for each user shared between the user and the application server. This allows us to do symmetric key encryption. We need to ensure the authenticity of the song data and confidentiality. To ensure authenticity we use HMAC. We create the tag using SHA256, a secure hashing algorithm. Furthermore the key are using during the hashing process to ensure that the tag can only be reproduced having the same message and key. 
+
+
+After the tag is created, we use the recognized symmetric key encryption algorithm AES. This is a secure way of encrypting data, assuming the implementation is good. We used CTR and no padding. No padding is required when we use the CTR mode. The CTR mode has the property of beeing able to decrypt in parallell, meaning different part of the encryption can be encrypted independently. This property is especially desired in the case of songs as it allows us the decrypt only certain parts, if the user skips the song. This becomes relevant later during the security challenge. For this we also needs a unique nounce (or IV), to excecute the mode. In this case it is random number, which is so random that it is unreasonable to believe that there will ever be two equal nounces. For future reference I will use the term IV instead of nounce. The IV is sent in cleartext with the rest of the encrypted data in a contatinated string: Ciphered content + " " + nounce. 
+
+When assembling the protect() method we perform these actions in this order:
+1. Input music file and key path
+2. Calulate tag using the music file and key path as input to the HMAC function. 
+3. Cipher the music file
+4. Concatonate the music file and hmac.
+5. Encrypt the music file cipher and Hmac.
+
+The unprotect method() is executed like this:
+1. Grab music file cipher and IV.
+2. Decrypt the cipher using the attached IV and your symmetric key.
+3. Grab the HMAC tag
+4. 
+
 (_Outline the design of your custom cryptographic library and the rationale behind your design choices, focusing on how it addresses the specific needs of your chosen business scenario._)
 
 (_Include a complete example of your data format, with the designed protections._)
@@ -57,6 +75,7 @@ One of the ways to secure both the database server and application server was th
 - The application server can initiate a HTTP connection with the database server
 - The database server can communicate with an established HTTP connection with the application server.
 - All other communication won't be forwarded by the router.
+- No communication to the server will be accepted. 
 
 This leads to only the application server being exposed to the outside world, while the database can only be accessed by the application server. This will leave some openings for unauthorized access to the database, but with the implementation of session keys, this is prevented. 
 
