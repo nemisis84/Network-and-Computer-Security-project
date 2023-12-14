@@ -13,11 +13,9 @@
 | 108924 | Simen Myrrusten   | <https://github.com/Nemisis84>   | <mailto:simen.myrrusten@tecnico.ulisboa.pt>  |
 
 
-*(fill table above with team member information)*  
 
-![Alice](img/alice.png) ![Bob](img/bob.png) ![Charlie](img/charlie.png)
+![João](img/ist193088.jpg) ![Daniel](img/ist199195.png) ![Simen](img/ist1108924.png)
 
-*(add face photos with 150px height; faces should have similar size and framing)*
 
 ## Contents
 

@@ -56,11 +56,12 @@ An HTTP client class is made for asking for songs, adding songs and deleting son
 
 ##### Application Server
 
-TODO
+We manually created a HTTP server, as it was enough for our needs, and allowed for good flexibility and responsiveness. Implementing a framework would make it easier, but would flaw our security objetives/challenges as it does the job for us.
+TO ELABORATE
 
 #### Database
 
-TODO
+We chose PostgreSQL as our database due to its open-source nature and simple to use and deploy. The extensive community support was also an import aspect as well as aligning with our project's requirements, ensuring security, and flexibility.
 
 
 (_Provide a brief description of the built infrastructure._) DONE
