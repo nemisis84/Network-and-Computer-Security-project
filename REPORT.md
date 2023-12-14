@@ -1,4 +1,4 @@
-# CXX GrooveGalaxy / BombAppetit / BlingBank / MediTrack Project Report
+# CXX GrooveGalaxy Project Report
 
 ## 1. Introduction
 
@@ -25,10 +25,14 @@ When assembling the protect() method we perform these actions in this order:
 5. Encrypt the music file cipher and Hmac.
 
 The unprotect method() is executed like this:
-1. Grab music file cipher and IV.
+1. Grab the full encrypted message and IV.
 2. Decrypt the cipher using the attached IV and your symmetric key.
-3. Grab the HMAC tag
-4. 
+3. Grab the HMAC tag, the ciphered music file and the IV of the encrypted music file
+4. Decrypt the ciphered music file using the extracted IV and symmetric key.
+5. Calulate the HMAC tag from the recieved music file.
+6. Compare the calulated HMAC with the recieved HMAC in the verify() method
+
+The verify method is baked into the unprotect method in the application, because it is in practise always ran with the decryption of the document. It can also be ran in isolation for demonstration purposes. In our structure we have API_server and API_client which both implements the protect and unprotect method. The difference is that the client has some logic for also grabbing the file and storing the file. For the purest form of the function with the least adaptaton to our application look for the methods in API_server.java. Both classes uses the Crypto_LIB.java classwhich provides the different cryptographic functions and HMAC tag generation. 
 
 (_Outline the design of your custom cryptographic library and the rationale behind your design choices, focusing on how it addresses the specific needs of your chosen business scenario._)
 
