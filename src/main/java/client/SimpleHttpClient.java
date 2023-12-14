@@ -242,11 +242,14 @@ public class SimpleHttpClient {
                         }
 
                         
-                        if(type.equals("NORMAL"))
+                        if(type.equals("NORMAL")){
+                             System.err.println("\nUnprotects using shared secret and session key:\n");
                             API_client.unprotect(response, secretkey_path, sessionkey_path);
-                        else
+                        }
+                        else {
+                            System.err.println("\nUnprotects using family key and session key:\n");
                             API_client.unprotect(response, familykey_path, sessionkey_path);
-
+                        }
                         System.out.println("Received: " + songName);
                         System.out.println("Stored in Musics directory");
                         break;

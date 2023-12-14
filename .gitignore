@@ -2,7 +2,9 @@
 # Project specific #
 ######################
 *.vscode/*
-
+resources/*.key
+Clients/*
+Family/*
 ######################
 # Windows metadata files
 ######################

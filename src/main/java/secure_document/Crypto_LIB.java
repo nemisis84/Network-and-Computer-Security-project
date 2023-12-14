@@ -2,19 +2,14 @@ package secure_document;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.ArrayList;
 import java.util.Base64;
-import java.util.List;
-
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.Mac;
-import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -39,10 +34,12 @@ public class Crypto_LIB {
     }
 
     public static int check(String File, String hash, String keyPath) throws Exception {
-        
+        System.out.println("Checking authenticity of data...\n\nRecieved tag: "+hash);
         String hashFile = Hmac(File, keyPath);
-
+        System.err.println("\nCalulated hash: "+hashFile+"\n\nChecking if tags match...");
+        
         if(hash.equals(hashFile)){ // same as the original
+            System.err.println("It's a match, authenticity ensured!");
             return 1;
         }
 
@@ -51,7 +48,7 @@ public class Crypto_LIB {
     }
 
     public static String AES_encrypt(String target, String keyPath) throws Exception{
-
+        System.err.println("Encrypting using AES/CTR/NoPadding...");
         byte[] audioBytes = target.getBytes();
 
         Key secretKey = readSecretKey(keyPath);
@@ -71,13 +68,18 @@ public class Crypto_LIB {
         
         String cipher = cipherString + " " + iv_send;
 
+        System.err.println("Encrypted data using key: " +secretKey+ "\nand IV: "+iv_send + "\nStart of cipher: "+cipherString.substring(0, 20)+"...");
+
         return cipher;
         
     }
 
     public static String AES_decrypt(String target, String IV, String keyPath) throws Exception{
+        
 
         Key secretKey = readSecretKey(keyPath);
+        
+        System.err.println("Decrypting data using key: " +secretKey+ "\nand IV: "+IV + "\nStart of cipher: "+target.substring(0, 20)+"...");
 
         byte[] encryptedText = Base64.getDecoder().decode(target);
         byte[] iv = Base64.getDecoder().decode(IV);
@@ -89,6 +91,8 @@ public class Crypto_LIB {
         byte[] originalBytes = cipher.doFinal(encryptedText);
 
         String original = new String(originalBytes);
+
+        System.err.println("Decrypting complete. Start of data: "+ original.substring(0, 20)+"...");
 
         return original;
         

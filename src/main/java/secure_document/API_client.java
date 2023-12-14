@@ -7,7 +7,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.*;
 
 import javax.xml.bind.DatatypeConverter;
 
@@ -25,6 +24,7 @@ public class API_client {
     }
 
     public static String decrypt_message(String message, String key) throws Exception{
+
 
         String cipher = message.split(" ")[0];
         String IV = message.split(" ")[1];
@@ -81,6 +81,7 @@ public class API_client {
         String send_message = hash_protected;
         send_message += "\n" + protected_file;
         send_message += "\n" + iv;
+
         
         return encrypt_message(send_message, sesskeyPath);
                     

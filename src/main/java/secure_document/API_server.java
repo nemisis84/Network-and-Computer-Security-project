@@ -1,17 +1,9 @@
 package secure_document;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.security.Key;
-import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
@@ -41,6 +33,7 @@ public class API_server {
         String musicEnc = cipherB64d.split(" ")[0];
         String iv = cipherB64d.split(" ")[1];
 
+
         jsonObject.getAsJsonObject("media").getAsJsonObject("mediaContent").addProperty("audioBase64", musicEnc);
         String protected_file = jsonObject.toString();
 
@@ -51,13 +44,14 @@ public class API_server {
         send_message += "\n" + protected_file;
         send_message += "\n" + iv;
 
+
         
         return encrypt_message(send_message, sesskeyPath);
             
     }
 
     public static String unprotect(String message, String keyPath, String sesskeyPath) throws Exception {
- 
+
         
         // decipher message and retreive it
         String clearMessage = decrypt_message(message , sesskeyPath);
