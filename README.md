@@ -47,7 +47,7 @@ Clone the base machine to create the other machines.
 
 For each machine, there is an initialization script with the machine name, with prefix `init-` and suffix `.sh`, that installs all the necessary packages and makes all required configurations in the a clean machine. Scripts can be found in /bash_scripts. They need to be ran from root folder for the project. For example:
 ```sh
-./bash_scripts/vm1.sh
+./bash_scripts/init-vm1.sh
 ```
 
 Inside each machine, use Git to obtain a copy of all the scripts and code.
@@ -60,15 +60,16 @@ Next we have custom instructions for each machine.
 
 #### Machine 1
 
-This machine runs the database. It runs PostgreSQL 14.10 and has a databaseconnector written. The database acts as can act as a server with custum code written for this purpose. 
+This machine runs the database. It runs PostgreSQL 14.10 and has a databaseconnector written in Java. The database acts as can act as a server with custum code written for this purpose. 
 
 *(describe what kind of software runs on this machine, e.g. a database server (PostgreSQL 16.1))*
 
-To verify:
+To verify psql version:
 
 ```sh
 $ psql --version
 ```
+This should return 14.10.
 
 To run database and open the DB shell you need to run this: 
 ```sh
@@ -108,6 +109,32 @@ The output should be: "Database server started on 192.168.1.100:80"
 
 This is the router. Run the ./bash_scripts/firewall.sh to establish the firewall rules. This will also list the rules: 
 
+Chain INPUT (policy ACCEPT)
+target     prot opt source               destination         
+REJECT     all  --  anywhere             anywhere             reject-with icmp-port-unreachable
+
+Chain FORWARD (policy ACCEPT)
+target     prot opt source               destination         
+ACCEPT     tcp  --  anywhere             192.168.1.1          tcp dpt:http
+ACCEPT     tcp  --  192.168.1.1          anywhere             tcp spt:http state RELATED,ESTABLISHED
+ACCEPT     tcp  --  192.168.1.1          192.168.0.100        tcp dpt:http
+ACCEPT     tcp  --  192.168.0.100        192.168.1.1          tcp spt:http state RELATED,ESTABLISHED
+REJECT     all  --  anywhere             anywhere             reject-with icmp-port-unreachable
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination         
+Chain PREROUTING (policy ACCEPT)
+target     prot opt source               destination         
+
+Chain INPUT (policy ACCEPT)
+target     prot opt source               destination         
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination         
+
+Chain POSTROUTING (policy ACCEPT)
+target     prot opt source               destination 
+
 #### Machine VM3
 
 This is the application server. Run:
@@ -128,13 +155,22 @@ This should return a CLI with the first output beeing "Do you have an account? (
 
 Now that all the networks and machines are up and running, we need to set up the network as in [Infrastructure](https://github.com/tecnico-sec/a16-joao-daniel-simen/blob/main/network/Infrastructure.png). For a guide to make connection take a look at [Virtual networking](https://github.com/tecnico-sec/Virtual-Networking) You can also edit the interfaces opening this file "/etc/network/interfaces" and inserting the /networking/[VM]/network_configs.txt to save the network configurations on rebooting of the VM.
 
-*(give a tour of the best features of the application; add screenshots when relevant)*
+Run these commands in each seperate machine to start the application:
 
 ```sh
-$ demo command
+sudo mvn compile exec:java -Dmainclass=server.HttpApplicationServer
+```
+```sh
+sudo mvn compile exec:java -Dmainclass=database.DatabaseConnector
+```
+```sh
+sudo mvn compile exec:java -Dmainclass=client.SimpleHttpClient
 ```
 
-*(replace with actual commands)*
+
+
+*(give a tour of the best features of the application; add screenshots when relevant)*
+
 
 *(IMPORTANT: show evidence of the security mechanisms in action; show message payloads, print relevant messages, perform simulated attacks to show the defenses in action, etc.)*
 
