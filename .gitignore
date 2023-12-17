@@ -5,6 +5,8 @@
 resources/*.key
 Clients/*
 Family/*
+Music/*.mp3
+Music/*.json
 ######################
 # Windows metadata files
 ######################

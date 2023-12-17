@@ -19,12 +19,14 @@ public class API_server {
 
         String cipher = message.split(" ")[0];
         String IV = message.split(" ")[1];
-        return Crypto_LIB.AES_decrypt(cipher, IV, key);
+        byte[] cnt = Base64.getDecoder().decode(message.split(" ")[2]);
+        return Crypto_LIB.AES_decrypt(cipher, IV, cnt, key);
 
     }
 
     public static String protect(String File, String keyPath, String sesskeyPath) throws Exception {
         
+
         JsonObject jsonObject = JsonParser.parseString(File).getAsJsonObject();
         String music = jsonObject.getAsJsonObject("media").getAsJsonObject("mediaContent").get("audioBase64").getAsString();
         
@@ -32,8 +34,8 @@ public class API_server {
         String cipherB64d = Crypto_LIB.AES_encrypt(music, keyPath);
         String musicEnc = cipherB64d.split(" ")[0];
         String iv = cipherB64d.split(" ")[1];
-
-
+        String cnt = cipherB64d.split(" ")[2];
+        
         jsonObject.getAsJsonObject("media").getAsJsonObject("mediaContent").addProperty("audioBase64", musicEnc);
         String protected_file = jsonObject.toString();
 
@@ -43,7 +45,7 @@ public class API_server {
         String send_message = hash_protected;
         send_message += "\n" + protected_file;
         send_message += "\n" + iv;
-
+        send_message += "\n" + cnt;       
 
         
         return encrypt_message(send_message, sesskeyPath);
@@ -58,6 +60,7 @@ public class API_server {
         String hash_protected = clearMessage.split("\n")[0];
         String protected_file = clearMessage.split("\n")[1];
         String ivFile = clearMessage.split("\n")[2];
+        byte[] cnt = Base64.getDecoder().decode(clearMessage.split("\n")[3]);
 
         // check the autenticity
         if(Crypto_LIB.check(protected_file, hash_protected, keyPath) == -1){
@@ -68,7 +71,7 @@ public class API_server {
         JsonObject jsonObject = JsonParser.parseString(protected_file).getAsJsonObject();
         String musicEnc = jsonObject.getAsJsonObject("media").getAsJsonObject("mediaContent").get("audioBase64").getAsString();
         
-        String music = Crypto_LIB.AES_decrypt(musicEnc, ivFile, keyPath);
+        String music = Crypto_LIB.AES_decrypt(musicEnc, ivFile, cnt, keyPath);
 
         jsonObject.getAsJsonObject("media").getAsJsonObject("mediaContent").addProperty("audioBase64", music);
         String songFile = jsonObject.toString();

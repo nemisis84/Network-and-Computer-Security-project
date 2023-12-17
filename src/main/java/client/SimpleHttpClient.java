@@ -217,14 +217,16 @@ public class SimpleHttpClient {
 
             while (running) {
 
-                if(type.equals("FAM LEADER"))
+                if(type.equals("FAM LEADER")){
                     System.out.println("Choose an action: (1) Get song, (2) Post a song, (3) Delete a song, (4) Add family member, (5) Check family tree, (6) Exit");
-                else if(type.equals("FAM"))
+                }
+                else if(type.equals("FAM")){
                     System.out.println("Choose an action: (1) Get song, (2) Post a song, (3) Delete a song, (4) Check family tree, (5) Exit");
-                else
+                }
+                else{
                     System.out.println("Choose an action: (1) Get song, (2) Post a song, (3) Delete a song, (4) Create family, (5) Join family, (6) Exit");
-                
-                    action = scanner.nextLine();
+                }
+                action = scanner.nextLine();
                 response = null;
                 switch (action) {
                     case "1": // Get song(s)
@@ -259,10 +261,14 @@ public class SimpleHttpClient {
                         Path file = Paths.get(filePath);
                         if (Files.exists(file)) {
                             String json;
-                            if(type.equals("NORMAL"))
+                            if(type.equals("NORMAL")){
+                                System.out.println("Protecting using family key and session key:\n");                                
                                 json = API_client.protect(filePath, secretkey_path, sessionkey_path);
-                            else
+                            }
+                            else{
+                                System.out.println("Protecting using family key and session key:\n");
                                 json = API_client.protect(filePath, familykey_path, sessionkey_path);
+                            }
 
                             response = this.sendPostRequest(applicationServer + "/post?id=" + ClientName + "&song=" + songName, json);
                             System.out.println("POST Response: " + response);

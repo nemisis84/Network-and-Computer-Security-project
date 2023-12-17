@@ -3,9 +3,12 @@ package secure_document;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
@@ -55,8 +58,15 @@ public class Crypto_LIB {
 
         Cipher c = Cipher.getInstance("AES/CTR/NoPadding");
 
-        byte[] iv = new byte[16];
+        byte[] iv = new byte[16]; 
         new SecureRandom().nextBytes(iv);
+        byte[] cnt = new byte[3];
+        Arrays.fill( cnt, (byte) 0 );
+
+        Array.setByte(iv, 13, cnt[0]);
+        Array.setByte(iv, 14, cnt[1]);
+        Array.setByte(iv, 15, cnt[2]);
+
         IvParameterSpec ivSpec = new IvParameterSpec(iv);
 
         c.init(Cipher.ENCRYPT_MODE, secretKey, ivSpec);
@@ -65,8 +75,9 @@ public class Crypto_LIB {
 
         String cipherString = Base64.getEncoder().encodeToString(encryptedBytes);
         String iv_send = Base64.getEncoder().encodeToString(iv);
+        String cnt_send = Base64.getEncoder().encodeToString(cnt);
         
-        String cipher = cipherString + " " + iv_send;
+        String cipher = cipherString + " " + iv_send + " " + cnt_send;
 
         System.err.println("Encrypted data using key: " +secretKey+ "\nand IV: "+iv_send + "\nStart of cipher: "+cipherString.substring(0, 20)+"...");
 
@@ -74,8 +85,7 @@ public class Crypto_LIB {
         
     }
 
-    public static String AES_decrypt(String target, String IV, String keyPath) throws Exception{
-        
+    public static String AES_decrypt(String target, String IV, byte[] cnt, String keyPath) throws Exception{
 
         Key secretKey = readSecretKey(keyPath);
         
@@ -83,8 +93,14 @@ public class Crypto_LIB {
 
         byte[] encryptedText = Base64.getDecoder().decode(target);
         byte[] iv = Base64.getDecoder().decode(IV);
+
+        //encryptedText = Arrays.copyOfRange(encryptedText, 16*127, encryptedText.length);
+
+        Array.setByte(iv, 13, cnt[0]);
+        Array.setByte(iv, 14, cnt[1]);
+        Array.setByte(iv, 15, cnt[2]);
         
-        IvParameterSpec ivSpec = new IvParameterSpec(iv);
+        IvParameterSpec ivSpec = new IvParameterSpec(iv); 
         Cipher cipher = Cipher.getInstance("AES/CTR/NoPadding");
         cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec);
 
