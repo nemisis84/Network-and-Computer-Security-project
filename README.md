@@ -86,9 +86,14 @@ SELECT * FROM media;
 ```
 
 The expected results are:
+
+
  user_id |     owner      | title |           file
+ 
 ---------+----------------+-------+---------------------------
-       1 | eduardo_albino | Numb  | Ed_SheeranShape_of_youpop
+
+   1     | eduardo_albino | Numb  | Ed_SheeranShape_of_youpop
+
 (1 row)
 
 The instructions in the file /database/setup_database.sql sets up the DB and inserts a dummy file. The final command extracts the content. Getting this result means that the DB is ready to go. 
@@ -121,7 +126,7 @@ This should return a CLI with the first output beeing "Do you have an account? (
 
 ## Demonstration
 
-Now that all the networks and machines are up and running, we need to set up the network as in ![Infrastructure](https://github.com/tecnico-sec/a16-joao-daniel-simen/blob/main/network/Infrastructure.png). For a guide to make connection take a look at ![Virtual networking](https://github.com/tecnico-sec/Virtual-Networking) You can also edit the interfaces opening this file "/etc/network/interfaces" and inserting the /networking/[VM]/network_configs.txt to save the network configurations on rebooting of the VM.
+Now that all the networks and machines are up and running, we need to set up the network as in [Infrastructure](https://github.com/tecnico-sec/a16-joao-daniel-simen/blob/main/network/Infrastructure.png). For a guide to make connection take a look at [Virtual networking](https://github.com/tecnico-sec/Virtual-Networking) You can also edit the interfaces opening this file "/etc/network/interfaces" and inserting the /networking/[VM]/network_configs.txt to save the network configurations on rebooting of the VM.
 
 *(give a tour of the best features of the application; add screenshots when relevant)*
 
@@ -141,17 +146,12 @@ This concludes the demonstration.
 
 - [Java 11.0.16.1](https://openjdk.java.net/)
 - [Maven 3.9.5](https://maven.apache.org/)
-- ...
+- Java built in libraries for I/O, SQL, networking and security
 
 ### Versioning
-
 We use [SemVer](http://semver.org/) for versioning.  
-
 ### License
 
 This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.txt) for details.
-
-*(switch to another license, or no license, as you see fit)*
-
 ----
 END OF README
