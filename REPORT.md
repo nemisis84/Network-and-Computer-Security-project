@@ -92,15 +92,33 @@ This leads to only the application server being exposed to the outside world, wh
 
 #### 2.3.1. Challenge Overview
 
+We used cryptography options (CTR) to allow playback to quickly start in the middle of an audio stream (The CTR mode has the property of beeing able to decrypt in parallell, meaning different part of the encryption can be encrypted independently), optimizing user experience without compromising security. We had CTR in mind from the beggining, already thinking about this requirement, so no change was needed.
+
+Additionaly, we added the concept of family sharing, where individual users can be members of the same family, and a protected song is accessible to all family members without modification.
+Each user still keeps their own key, so we decided to created a new family key, to ensure the families' security, while assuring security to the user.
+
 (_Describe the new requirements introduced in the security challenge and how they impacted your original design._)
 
 #### 2.3.2. Attacker Model
+
+In terms of what is trusted, the database is fully trusted, as it does not verify anything, if a request is made to the database, the one sending requests (server), has already been completely verified.
+The server is partially trusted, since it has a lot of verifications.
+The users themselfs, are partially trusted, since they don't access the database directly, and pass through all the server's verifications.
+Anyone who's coming from outside / unregistered / an attacker are untrusted. They shouldn't even be able to pass through the firewall and hence in theory can't do anything. If they somehow gain access to the server as normal users, they can't do anything either since everything is encrypted with key's and they can't access other users' songs, since the server verifies everything. The HMAC + CTR has proven very safe and we are confident in our security.
 
 (_Define who is fully trusted, partially trusted, or untrusted._)
 
 (_Define how powerful the attacker is, with capabilities and limitations, i.e., what can he do and what he cannot do_)
 
 #### 2.3.3. Solution Design and Implementation
+
+We didn't have to redesign in terms of encryption. We had HMAC + CTR in mind from the beggining, to be able to provide the highest security level and complete this challenge. This solution allows us to be able to decrypt in parallell, meaning different part of the encryption can be encrypted independently, allowing for users to quickly start in the middle of an audio stream while still ensuring security.
+
+In terms of the families, all we had to do was create a new family key, our implementation allowed for an easy adaptation with this addition.
+
+The communication entities are the database, the router, the server and the client. The client can exchange information with the server, while this connection is secured by the router. The server can then connect to the database and do what the client asked for. The messages themselfs don't diverge too much. The client requests a connection to the server, the router verifies this connection is from a legit client and allows for communication between them. The client requests something to be done(post song, get song, etc), the server receives this request and forwards it to the database, which will then execute said request, if possible. After this the database will send the result to the server, where the information will then be updated to the client.
+
+![Infrastructure](https://github.com/tecnico-sec/a16-joao-daniel-simen/blob/main/network/Infrastructure.png)
 
 (_Explain how your team redesigned and extended the solution to meet the security challenge, including key distribution and other security measures._)
 
