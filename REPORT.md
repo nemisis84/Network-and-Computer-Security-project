@@ -92,7 +92,7 @@ An HTTP client class is made for asking for songs, adding songs and deleting son
 
 ##### Application Server
 
-We manually created a HTTP server, as it was enough for our needs, and allowed for good flexibility and responsiveness. Implementing a framework would make it easier, but would flaw our security objetives/challenges as it does the job for us. The application server acts as a HTTP server when communication with clients, and then acts a HTTP client when requesting data from the DB. In hinsight, this could have been solved more smoothly with the use of jdbc. However, with limited knowledge of databases and their application layer protocols, we did not know that this was an obious solution. 
+We manually implemented a server application, as it was enough for our needs, and allowed for good flexibility and responsiveness. Implementing a framework would make it easier, but would flaw our security objetives/challenges as it does the job for us. The application server acts as a HTTP server when communication with clients, and then acts a HTTP client when requesting data from the DB. In hinsight, this could have been solved more smoothly with the use of jdbc. However, with limited knowledge of databases and their application layer protocols, we did not know that this was an obious solution. 
 
 #### Database
 
@@ -137,7 +137,7 @@ In our case the session key is shared just by encrypting it with the long-term k
 We used cryptography options (CTR) to allow playback to quickly start in the middle of an audio stream (The CTR mode has the property of beeing able to decrypt in parallell, meaning different part of the encryption can be encrypted independently), optimizing user experience without compromising security. We had CTR in mind from the beggining, already thinking about this requirement, so no change was needed.
 
 Additionaly, we added the concept of family sharing, where individual users can be members of the same family, and a protected song is accessible to all family members without modification.
-Each user still keeps their own key, so we decided to created a new family key, to ensure the families' security, while assuring security to the user.
+Each user still keeps their own key, so we decided to created a new family key, which will be shared for all members of the family, since only invited people can be a part of a family, we can assume family members trust each other, this way families will be able to share songs, while assuring security to each user since they keep their own key for extra security.
 
 <!-- (_Describe the new requirements introduced in the security challenge and how they impacted your original design._) -->
 
@@ -145,8 +145,10 @@ Each user still keeps their own key, so we decided to created a new family key, 
 
 In terms of what is trusted, the database is fully trusted, as it does not verify anything, if a request is made to the database, the one sending requests (server), has already been completely verified.
 The server is partially trusted, since it has a lot of verifications.
-The users themselfs, are partially trusted, since they don't access the database directly, and pass through all the server's verifications.
-Anyone who's coming from outside / unregistered / an attacker are untrusted. They shouldn't even be able to pass through the firewall and hence in theory can't do anything. If they somehow gain access to the server as normal users, they can't do anything either since everything is encrypted with key's and they can't access other users' songs, since the server verifies everything. The HMAC + CTR has proven very safe and we are confident in our security.
+The users themselfs, are treated as untrusted, since they don't access the database directly, and need pass through all the server's verifications, aswell as requiring all the different security keys.
+Anyone who's coming from outside / unregistered / an attacker are untrusted. They shouldn't even be able to pass through the firewall and hence in theory can't do anything. If they somehow gain access to the server as normal users, they can't do anything either since everything is encrypted with key's and they can't access other users' songs, since the server verifies everything. The HMAC + CTR is a good overall combiation, and we think our security is safe enough for this project's requirements and assumptions.
+This "in theory" however, does contain some flaws. Our database may be vulnerable to SQL injections as we don't sanitize queries.
+
 
 <!-- (_Define who is fully trusted, partially trusted, or untrusted._) -->
 
@@ -160,6 +162,8 @@ In terms of the families, all we had to do was create a new family key, our impl
 
 The communication entities are the database, the router, the server and the client. The client can exchange information with the server, while this connection is secured by the router. The server can then connect to the database and do what the client asked for. The messages themselfs don't diverge too much. The client requests a connection to the server, the router verifies this connection is from a legit client and allows for communication between them. The client requests something to be done(post song, get song, etc), the server receives this request and forwards it to the database, which will then execute said request, if possible. After this the database will send the result to the server, where the information will then be updated to the client.
 
+(This diagram is here so we don't forget to do the other one!!!)
+----------------------------------------------------------------
 ![Infrastructure](/network/Infrastructure.png)
 
 <!-- (_Explain how your team redesigned and extended the solution to meet the security challenge, including key distribution and other security measures._)
