@@ -1,4 +1,4 @@
-# CXX GrooveGalaxy Project Report
+# C16 GrooveGalaxy Project Report
 
 ## 1. Introduction
 
