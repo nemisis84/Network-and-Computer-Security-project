@@ -146,8 +146,9 @@ Each user still keeps their own key, so we decided to created a new family key, 
 In terms of what is trusted, the database is fully trusted, as it does not verify anything, if a request is made to the database, the one sending requests (server), has already been completely verified.
 The server is partially trusted, since it has a lot of verifications.
 The users themselfs, are treated as untrusted, since they don't access the database directly, and need pass through all the server's verifications, aswell as requiring all the different security keys.
-Anyone who's coming from outside / unregistered / an attacker are untrusted. They shouldn't even be able to pass through the firewall and hence in theory can't do anything. If they somehow gain access to the server as normal users, they can't do anything either since everything is encrypted with key's and they can't access other users' songs, since the server verifies everything. The HMAC + CTR is a good overall combiation, and we think our security is safe enough for this project's requirements and assumptions.
-This "in theory" however, does contain some flaws. Our database may be vulnerable to SQL injections as we don't sanitize queries.
+Anyone who's coming from outside / unregistered / an attacker are untrusted. They shouldn't even be able to pass through the firewall and hence in theory can't do anything. If they somehow gain access to the server as normal users, they can't do anything either since everything is encrypted with key's and they can't access other users' songs, since the server verifies everything. The HMAC + AES is a good overall combiation, but we are very vulnerable to a lot of attacks. 
+
+For example, if a machine is compromised, not only the client using that machine would be compromised, but all the family. The attacker could easily get access to the family key, gaining access to all the victim's songs, and would be able to delete them from the victim's database which would also affect the family.
 
 
 <!-- (_Define who is fully trusted, partially trusted, or untrusted._) -->
