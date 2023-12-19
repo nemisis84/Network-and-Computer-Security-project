@@ -137,6 +137,8 @@ Additionally, using session keys allows us to provide forward secrecy if additio
 
 In our case, the session key is shared just by encrypting it with the long-term key. This means that we are not providing forward secrecy or protection against replay attacks. In a real-world application, we would recommend using Diffie-Hellman. We would also recommend adding a mechanism for protection against replay attacks such as implementing either a timestamp, challenge or sequence number.
 
+For the communication between the application server and DB, no encryption is used. Both the DB's network and application server's network are privat and seperated from the outside world, meaning that the risk of packet sniffing is reduced. In addition, this data is not sensitive at all, as it only contains content with possible copy rigth claims. Due to these reasons, remain this communication unprotected.
+
 <!-- (_Discuss how server communications were secured, including the secure channel solutions implemented and any challenges encountered._)
 
 (_Explain what keys exist at the start and how are they distributed?_) -->
@@ -145,10 +147,9 @@ In our case, the session key is shared just by encrypting it with the long-term 
 
 #### 2.3.1. Challenge Overview
 
-We used cryptography options (CTR) to allow playback to quickly start in the middle of an audio stream (The CTR mode has the property of beeing able to decrypt in parallell, meaning different part of the encryption can be encrypted independently), optimizing user experience without compromising security. We had CTR in mind from the beggining, already thinking about this requirement, so no change was needed.
+For this challenge we were supposed to enable playpack in an efficent way so the user can skip to a certain part of the song. This makes our previous choice of CTR important, as this enables parallell encryption. Had we used CBC for instance, would this not be possible as it must be done sequentially. To use this property we needed to find a way to grab certain blocks of the encryption and decrypt them. This is different than we did before, as we by default decrypt from start to finish. To solve this challenge only code on the client side was changed. You could argue that we only need to encrypt certain parts of the song on the server side. However, that would mean that the user need to include the playback time in the get request itself, which in many cases is unreasonable. Also, what if the user wants to suddenly start the song at the start? Then we will need to do a new request, thereby adding additional time before the song is ready. Even though we in our application only allow the user to choose a certain point in the song once, this having the whole song and only encrypting what we need it the most reasonable choise. 
 
-Additionaly, we added the concept of family sharing, where individual users can be members of the same family, and a protected song is accessible to all family members without modification.
-Each user still keeps their own key, so we decided to created a new family key, which will be shared for all members of the family, since only invited people can be a part of a family, we can assume family members trust each other, this way families will be able to share songs, while assuring security to each user since they keep their own key for extra security.
+Additionaly, we added the concept of family sharing, where individual users can be members of the same family, and a protected song is accessible to all family members without modification. Each user still keeps their own secret key, but we also adds the consept of a family key shared among all members of a family. Only invited people can be a part of a family and the family key replaces the secret key when checking for authenticity of the document. You could also do this without a family key, just allowing users in a given family to access the songs other family members has in the DB. However, this does not provide the authenticity we want when requesting songs, and thus a family key solution was implemented. 
 
 <!-- (_Describe the new requirements introduced in the security challenge and how they impacted your original design._) -->
 
