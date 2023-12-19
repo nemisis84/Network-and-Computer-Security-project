@@ -161,6 +161,8 @@ Anyone who's coming from outside / unregistered / an attacker are untrusted. The
 
 For example, if a machine is compromised, not only the client using that machine would be compromised, but all the family. The attacker could easily get access to the family key, gaining access to all the victim's songs, and would be able to delete them from the victim's database which would also affect the family.
 
+Since we don't have HTTPS/TLS, our credentials are being sent in plain text. This way, if any attacker has access to the connection, for example from a man in the middle attack, the attacker could gain access to the client's login information, and delete the songs etc.
+
 
 <!-- (_Define who is fully trusted, partially trusted, or untrusted._) -->
 
