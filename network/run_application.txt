@@ -1,7 +1,0 @@
-Run main method:
-
-sudo mvn compile exec:java -Dmainclass=server.HttpApplicationServer
-
-sudo mvn compile exec:java -Dmainclass=database.DatabaseConnector
-
-sudo mvn compile exec:java -Dmainclass=client.SimpleHttpClient

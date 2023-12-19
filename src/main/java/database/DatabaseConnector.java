@@ -233,7 +233,7 @@ public class DatabaseConnector {
 
     public static void main(String[] args) {
         try {
-            startServer("localhost", 8001); // Start the server on port 8001 for database requests
+            startServer("192.168.0.100", 80); // Start the server on port 8001 for database requests
         } catch (IOException e) {
             e.printStackTrace();
         }

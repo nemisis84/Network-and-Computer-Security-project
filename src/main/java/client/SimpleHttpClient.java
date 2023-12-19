@@ -262,7 +262,7 @@ public class SimpleHttpClient {
                         if (Files.exists(file)) {
                             String json;
                             if(type.equals("NORMAL")){
-                                System.out.println("Protecting using family key and session key:\n");                                
+                                System.out.println("Protecting using secret key and session key:\n");                                
                                 json = API_client.protect(filePath, secretkey_path, sessionkey_path);
                             }
                             else{
@@ -372,7 +372,7 @@ public class SimpleHttpClient {
 
     public static void main(String[] args) throws Exception {
         SimpleHttpClient client = new SimpleHttpClient();
-        String applicationServer = "localhost:80";
+        String applicationServer = "192.168.2.4:80";
         client.CLI(applicationServer);
     }
 }

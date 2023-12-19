@@ -590,7 +590,7 @@ public class HttpApplicationServer {
 
     public static void main(String[] args) {
         try {
-            startServer("localhost", 80, "localhost:8001"); // Start the server on port 8000
+            startServer("192.168.1.1", 80, "192.168.0.100:80"); // Start the server on port 8000
         } catch (IOException e) {
             e.printStackTrace();
         }

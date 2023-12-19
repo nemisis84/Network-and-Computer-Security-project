@@ -2,38 +2,42 @@
 
 ## 1. Introduction
 
-Our buisniess scenario is the GrooveGalaxy. We have created a simple application with focus on security, testability and low effort on user experiency. There are three main parts of the project; secure document, infrastructure and the security challenge. For the secure document AES and HMAC are used to provide confidentiality and authenticity, as that were the requirements given in the project desciption. Furthermore, we used HTTP for communication between a server clients and an application server and between the application server an the database(DB). To make our system even more secure we have implemented a firewall on the router which connects the application server and database with the "world". In the security challenge we have implemented a family key shared among the family clients in a given family. Finally, we have implemented playback of audio such that user can quickly skip to a certain point in a song. This is enabled by the properties of the CTR mode used in the AES encryption
+Our buisniess scenario is the GrooveGalaxy. We have created a simple application with a focus on security, testability and low effort on user experience. There are three main parts of the project; secure document, infrastructure and the security challenge. For the secure document AES and HMAC are used to provide confidentiality and authenticity, as those were the requirements given in the project description. Furthermore, we used HTTP for communication between clients and the application server and between the application server and the database(DB). To make our system even more secure we have implemented a firewall on the router which connects the application server and database with the "world". In the security challenge, we have implemented a family key shared among the family clients in a given family. Finally, we have implemented playback of audio such that users can quickly skip to a certain point in a song. This is enabled by the properties of the CTR mode used in the AES encryption. Underneath, you can see the architecture of our network:
 
 <!-- (_Provide a brief overview of your project, including the business scenario and the main components: secure documents, infrastructure, and security challenge._)
 
 (_Include a structural diagram, in UML or other standard notation._) -->
-
+![Infrastructure](/network/Infrastructure.png)
 ## 2. Project Development
 
 ### 2.1. Secure Document Format
 
 #### 2.1.1. Design
 
-We start off with the assumtion that we have one shared secret for each user shared between the user and the application server. For this challenge we were asked to provide authenticity of the song data and confidentiality between the server and the owner. 
+We start with the assumption that we have one shared secret for each user shared between the user and the application server. For this challenge, we were asked to provide authenticity of the song data and confidentiality between the server and the owner. 
 
-To ensure authenticity we use HMAC. In HMAC a secret is XORed with some constants, concatonated with the message and hashed. This produces a unique tag, which only can be produced by having the same message input, secret and hashing algorithm. We create the tag using SHA256, a secure hashing algorithm. 
+To ensure authenticity we use HMAC. In HMAC a secret is XORed with some constants, concatenated with the message and hashed. This produces a unique tag, which only can be produced by having the same message input, secret and hashing algorithm. We create the tag using SHA256, a secure hashing algorithm. 
 
-For the confidentiality use the recognized symmetric key encryption algorithm AES. This is a secure way of encrypting data, assuming the implementation is good. We used CTR and no padding. No padding is nessecary when we use the CTR mode. The CTR mode has the property of beeing able to decrypt in parallell, meaning different part of the encryption can be encrypted independently and simultanously. This property is especially desired in the case of songs as it allows us the decrypt only certain parts. This is a desired property as it allows us to quickly encrypt the part of the song that is actually listened to, skipping encryption of the previous parts when the user skips to a certain part of the song. This becomes relevant later during the security challenge. 
+For confidentiality use the recognized symmetric key encryption algorithm AES. This is a secure way of encrypting data, assuming the implementation is good. We used CTR and no padding. No padding is necessary when we use the CTR mode. The CTR mode has the property of being able to decrypt in parallel, meaning different parts of the encryption can be encrypted independently and simultaneously. This property is especially desired in the case of songs as it allows us the decrypt only certain parts. This allows us to quickly encrypt the part of the song that is listened to, skipping encryption of the previous parts when the user skips to a certain part of the song. This becomes relevant later during the security challenge. 
 
+For the CTR mode, we also need a unique nonce (or IV). For this, an RNG can be used to generate an IV, given that collisions are highly unlikely. For this purpose the library java.security.SecureRandom is used. Under the assumption that this PRNG is secure, this is a sound way to produce the nonce. For future reference, we will use the term IV instead of nonce. The IV is sent in cleartext with the rest of the encrypted data in a concatenated string: Ciphered content + " " + IV. The IV is used to create the uniqueness of the encryption, and it is therefore secure to send this unencrypted. 
 
-For the CTR mode we also needs a unique nounce (or IV). In this case it is random number, which is so random that it is unreasonable to believe that there will ever be two equal nounces. For future reference we will use the term IV instead of nounce. The IV is sent in cleartext with the rest of the encrypted data in a contatinated string: Ciphered content + " " + nounce. The IV is used to create uniqueness of the encryption, and it is therefore secure to send this unencrypted. 
-
-As the project evolved, it became clear that there was a need for a session key. The inital shared secret are handled as a long-term secret, and thereby should not be used for providing encryption of communication. It is rather used for authenticity and session key generation. Later, we will also explain the implementation of a family key, which will replace the long-term key for authenticity where it excists. However, for the purposes of explaining the mechanisms of thesecure document cuntions, the use of the long-term symmetric key is used. 
+As the project evolved, it became clear that there was a need for a session key. The initial shared secret is handled as a long-term secret, and thereby should not be used for providing encryption of communication. It is rather used for authenticity and session key generation. Later, we will also explain the implementation of a family key, which will replace the long-term key for authenticity where it exists. However, to explain the mechanisms of the secure document functions, the use of the long-term symmetric key is used. 
 
 Below you can see the message format:
 
-K<sub>s</sub>(TAG + K<sub>lt</sub>(plaintext) + IV<sub>lt</sub>) + IV<sub>s</sub>
+{TAG, {plaintext}<sub>K<sub>lt</sub></sub>, IV<sub>lt</sub>}<sub>K<sub>s</sub></sub> , IV<sub>s</sub>
+
+The TAG is the HMAC tag composed like this:
+
+HMAC( {plaintext}<sub>K<sub>lt</sub></sub>, K<sub>lt</sub>)
 
 The variables are:
 - K<sub>s</sub> = session key
 - K<sub>lt</sub> = long-term symmetric key
 - IV<sub>lt</sub> = IV used for the CTR mode in the inner encryption with K<sub>lt</sub>
 - IV<sub>s</sub> = IV used for the CTR mode in the outer encryption with K<sub>s</sub>
+- HMAC, the function creating the Tag used for authenticity. 
 
 <!-- (_Outline the design of your custom cryptographic library and the rationale behind your design choices, focusing on how it addresses the specific needs of your chosen business scenario._) -->
 
@@ -50,27 +54,31 @@ For the implementation of the secure document, Java was used as it was used for 
 
 #### Protect()
 
-
-For the secure document part of the project, we were asked to have three main methods; protect(), unprotect() and verify(). Protect() and unprotect() are implemented twice in the code with similarities. This is due to their specific use in the the entities. They can be both found in API_server.java and API_client.java. The description below will only focus on the cryptographic and security properties of the functions. 
+For the secure document part of the project, we were asked to have three main methods; protect(), unprotect() and verify(). Protect() and unprotect() are implemented twice in the code with similarities. This is due to their specific use in the entities. They can be both found in API_server.java and API_client.java. The description below will only focus on the cryptographic and security properties of the functions. 
 
 The protect() method is executed like this
 1. Input: file to be protected, symmetric key path and session key path.
 2. Encrypt the input file using the symmetric key.
-3. Calulate the HMAC tag from the encrypted file and symmetric key.
-4. Encrypt the tag and cipher (from using the symmetric key) using the session key. 
+3. Calculate the HMAC tag from the encrypted file and symmetric key.
+4. Encrypt the HMAC tag and cipher (from using the symmetric key) using the session key. 
 
-The IV is always attached after the cipher doing an encryption with a space separating the cipher and IV.
+As the steps explain, we do two rounds of encryption. First use the symmetric key, which initially will be the shared secret (later this can be replaced with the family key). This is to provide authenticity and confidentiality of the secured document. The latter encryption using the session key is also done to provide confidentiality but is mainly done to not expose the long-term key. The reasoning for implementing a session key can be found in 2.2.2. Server Communication Security.
 
 The unprotect() method is executed like this:
-1. Input: file to be unprotected, symetric key path and session key path.
+1. Input: file to be unprotected, symmetric key path and session key path.
 2. Grab the full tag, encrypted message and IV.
 3. Decrypt the encrypted message using the session key. 
-4. Run the check() method to check authenticity with input: the symmetric key, decrypted message(using the session key) cipher and the recieved tag. 
+4. Run the check() method to check authenticity with input: the symmetric key, decrypted message(using the session key) cipher and the received tag. 
 5. Decrypt the message using the symmetric key.
 
-The verify method is used in the unprotect method in the application, because it is always ran with the decryption of the document. The purpose of this method is to ensure the authenticity by calulating the tag from a message and comparing the calculated tag with the recieved tag. It can also be ran in isolation for demonstration purposes. 
+The check() method is used in the unprotect method in the application because it is always run with the decryption of the document. The purpose of this method is to ensure authenticity by calculating the tag from a message and comparing the calculated tag with the received tag. It can also be run in isolation for demonstration purposes. Here is the description of the check() method:
 
-TODO: Challenges?
+1. Input: File to be checked, HMAC tag, symmetric key path.
+2. Calculate the HMAC tag from the input file. 
+3. Compare the calulated tag T' with the received tag T. 
+
+
+<!-- TODO: if time-> challenges? -->
 
 <!-- (_Detail the implementation process, including the programming language and cryptographic libraries used._) -->
 
@@ -79,24 +87,26 @@ TODO: Challenges?
 ### 2.2. Infrastructure
 
 #### 2.2.1. Network and Machine Setup
-We have a total of 4 VMs in our infrastructure. The image below shows how the infrastructure is built up:
+We have a total of 4 VMs in our [Infrastructure](network/Infrastructure.png); Client(s), application server, router and database server. 
 
-![Infrastructure](network/Infrastructure.png)
+For the communication between the instances, we use HTTP. We made all communications using Java libraries. No major framework was used. As we wanted control over the security and the information flow we think this was the best option. Many frameworks handle a lot of the security properties for you, which for the most part is good, but for this project did not make sense. Using simple libraries allowed us to do all the changes we wanted, without managing the configuration and setup of a framework. Using a framework such as Spring Boot was a considered option. 
 
-For the communication between the instances, we use HTTP. We made all communications using Java libraries. No major framework was used. As we wanted control over the security and the information flow we think this was the best option. Many frameworks handle a lot of the security properties for you, which for the most part is good, but for this project did not make sense. Using simple libraries allowed us to do all the changes we wanted, without managing the configuration and setup of a framework. 
+As for the chosen communication protocol, we choose HTTP, because of its familiarity and properties. For a client sending a request in a client-server communication, HTTP is the go-to protocol used in technology today. This easily allows us to request operations which can execute the CRUD operations. One thing to be aware of is that we did not enable clients to update data in the database, as songs are usually immutable. 
 
-As for the chosen communication protocol, we choose HTTP, because of its familiarity and properties. For a client sending a request in a client-server communication, HTTP is the go-to protocol used in technology today. This easily allows us to request operations which can execute the CRUD operations. One thing to be aware of is that we did not enable clients to update data in the database, as songs are usually immutable. We will now explain the technology and reasoning for each participant:
+We did not implement HTTPS, meaning HTTP with TLS. This is a downside, and with more time and effort, this would be recommended. First of all, HTTPS is an industry-standard which are used wherever the HTTP protocol is used. HTTPS allows us to provide machine authentication through certificates, meaning we can verify that the server is who we expect it to be. The downsides of choosing HTTP instead of HTTPS are explained more when looking at the attacker model later in the report. 
+
+We will now explain the technology and reasoning for each participant:
 
 ##### Client
 An HTTP client class is made for asking for songs, adding songs and deleting songs. Built using mainly java.net.http.* packages. A CLI is also provided. This lightweight version of a client was implemented with a focus on being adaptable to a changing application and network. A web interface could also be implemented, but as it would need to be implemented with the security classes already made in Java, this would lead to more complexity. For the project, a simple CLI is sufficient to illustrate the security properties of the application. 
 
 ##### Application Server
 
-We manually implemented a server application, as it was enough for our needs, and allowed for good flexibility and responsiveness. Implementing a framework would make it easier, but would flaw our security objetives/challenges as it does the job for us. The application server acts as a HTTP server when communication with clients, and then acts a HTTP client when requesting data from the DB. In hinsight, this could have been solved more smoothly with the use of jdbc. However, with limited knowledge of databases and their application layer protocols, we did not know that this was an obious solution. 
+We manually implemented a server application, as it was enough for our needs, and allowed for good flexibility and responsiveness. Implementing a framework like Spring Boot could be possible, but configuring a framework we did not know was a risk we did not want to take. The application server acts as an HTTP server when communicating with clients, and then acts as an HTTP client when requesting data from the DB. In hindsight, this could have been solved more smoothly with the use of JDBC. However, with limited knowledge and communication of databases and their application layer protocols, we did not know that this was an obvious solution. 
 
 #### Database
 
-We chose PostgreSQL as our database due to its open-source nature and simple to use and deploy. The extensive community support was also an import aspect as well as aligning with our project's requirements, ensuring security, and flexibility.
+We chose PostgreSQL as our database due to its open-source nature and simplicity of use and deployment. The extensive community support was also an important aspect as well as aligning with our project's requirements.
 
 
 <!-- (_Provide a brief description of the built infrastructure._) DONE -->
@@ -107,10 +117,10 @@ We chose PostgreSQL as our database due to its open-source nature and simple to 
 
 
 #### Firewall
-One of the ways to secure both the database server and application server was the use of a firewall at the router. The applied rules could be found in /network/router/firewall. We explicitly only allow these communications:
+One of the ways to secure both the database server and application server was the use of a firewall at the router. The applied rules can be found in /network/VM2/firewall. We explicitly only allow these communications:
 - Any computer can access the application server with HTTP (port 80).
 - The application server can communicate with established HTTP connections.
-- The application server can initiate a HTTP connection with the database server.
+- The application server can initiate an HTTP connection with the database server.
 - The database server can communicate with an established HTTP connection with the application server.
 - All other communication won't be forwarded by the router.
 - No communication to the router will be accepted. 
@@ -119,12 +129,13 @@ This leads to only the application server being exposed to the outside world, wh
 
 #### Session keys and user system
 
-As the application and requirements expanded, we implemented key distribution. First of all, the client and application server don't start with the shared secret. As we can have an unknown number of clients, we share this long-term key when a new user registers. This also means that we added a user system in our database. The sharing of long-term key is done in cleartext and should not be viewed as a part of the secure communication, and is implemented for practical demonstration purposes. 
+As the application and requirements expanded, we implemented key distribution. First of all, the client and application server don't start with the shared secret. As we can have an unknown number of clients, we share this long-term key when a new user registers. This also means that we added a user system to our database. The sharing of long-term keys is done in cleartext and should not be viewed as a part of the secure communication, and is only implemented for practical demonstration purposes. 
 
-Furthermore, we implemented a session key as this would not expose the long-term key in the same way as if it had been used to encrypt communication. If a long-term key is compromised, it is no longer useful. However, if a session key is compromised, we could simply just create a new session key derived from the long-term key. Also, the longer a key is in use, the easier it is to perform cryptoanalysis, which further emphisises the importance of using session keys. Finally, using session keys allows us to provide forward secrecy. This means that the exposure of the long-term key won't compromise past session keys. Simply using a long-term key to share session keys don't provide forward secrecy, but together with for instance Diffie-Hellman key exchange perfect forward secrecy is achieved. 
+Furthermore, we implemented a session key as this would not expose the long-term key in the same way as if it had been used to encrypt communication. If a long-term key is compromised, it is no longer useful. However, if a session key is compromised, we could simply just create a new session key and share it using the long-term key. Also, the longer a key is in use, the easier it is to perform cryptoanalysis, which further emphasises the importance of using session keys. 
 
-In our case the session key is shared just by encrypting it with the long-term key. This means that we are not providing forward secrecy or protection against replay attacks. In a real world application we would recommend using Diffie-Hellman. We would also recommend adding a mechanism for protection against replay attack such as implementing either a timestamp, challenge or sequence number. 
+Additionally, using session keys allows us to provide forward secrecy if additional protocols are added. This means that the exposure of the long-term key won't compromise past session keys. Simply using a long-term key to share session keys doesn't provide forward secrecy, but together with, for instance, Diffie-Hellman key exchange perfect forward secrecy is achieved. This would be overkill for the scope of this project, both because of the time aspect and because the privacy required of our data is not the highest.  
 
+In our case, the session key is shared just by encrypting it with the long-term key. This means that we are not providing forward secrecy or protection against replay attacks. In a real-world application, we would recommend using Diffie-Hellman. We would also recommend adding a mechanism for protection against replay attacks such as implementing either a timestamp, challenge or sequence number.
 
 <!-- (_Discuss how server communications were secured, including the secure channel solutions implemented and any challenges encountered._)
 
@@ -173,15 +184,15 @@ The communication entities are the database, the router, the server and the clie
 
 ## 3. Conclusion
 
-We have created a simple application where a user can post and request music. A user can create or join a family to share his/her favorite music with the family. The application is minimalistic and the project was more conserned about the security properties. 
+We have created a simple application where a user can post and request music. A user can create or join a family to share his/her favourite music with the family. The application is minimalistic and the project was more concerned about the security properties. 
 
-The communication between a server and client are encrypted using AES to provide confidentiality. In addition, a HMAC tag is added to provide authenticity. Session keys are created and sent using the long-term shared secret, providing less exposure of the long-term secret. A family can share songs, nd the authenticity is ensured by using a family key held by all entities of the family. When calulating the HMAC tag the long-term key is replaced with the family key. To provide a better user experience(at least in theory) we can start encryption at the start of each block from the CTR mode. This makes it possible for the user to skip songs quicker, because it don't need to decrypt all the content before the point the user skipped to. 
+The communication between a server and a client is encrypted using AES to provide confidentiality. In addition, an HMAC tag is added to provide authenticity. Session keys are created and sent using the long-term shared secret, providing less exposure to the long-term secret. A family can share songs, and the authenticity is ensured by using a family key held by all entities of the family. When calculating the HMAC tag the long-term key is replaced with the family key. To provide a better user experience(at least in theory) we can start encryption at the start of each block from the CTR mode. This makes it possible for the user to skip songs quicker because it doesn't need to decrypt all the content before the point the user skipped to. 
 
-Overall, the application has multiple vulnerabilities and weaknesses. The application interface would be improved by providing more error handling and a web interface. Furthermore, replay attacks are possible as we don't have a timestamp, challenge or sequence number. Other vulnerabilities are no forward secrecy, no family joining protection and possible SQL injection attacks. 
+Overall, the application has multiple vulnerabilities and weaknesses. The application interface would be improved by providing more error handling and a web interface. Furthermore, replay attacks are possible as we don't have a timestamp, challenge or sequence number. Other vulnerabilities are no forward secrecy and possible server impostering attacks. 
 
-What we manage to achieve was authenticity from the HMAC, confidentiality (as long as keys are not compromised) from the AES encryption and also a restrictive network not allowing unexpected requests our because of our firewall. 
+What we managed to achieve was authenticity from the HMAC, confidentiality (as long as keys are not compromised) from the AES encryption and a restrictive network not allowing unexpected requests because of our firewall. 
 
-The project has given us practical experience in applied network security. We have designed and implemented security measures using sound java libraries., while considering how an attacker would try o compromise our application. Furthermore, we have built a network and implemented a sound firewall. Even though development often is done using sound frameworks, does this hands on experience give us eperience in considering different relevant security practises. This will both be useful in a developer setting or as a security specialist. 
+The project has given us practical experience in applied network security. We have designed and implemented security measures using sound Java libraries. While considering how an attacker would try to compromise our application. Furthermore, we have built a network and implemented a sound firewall. Even though development often is done using sound frameworks, does this hands-on experience give us experience in considering different relevant security practices. This will both be useful in a developer setting or as a security specialist. 
 
 <!-- (_State the main achievements of your work._)
 

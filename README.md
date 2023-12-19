@@ -26,7 +26,7 @@ It offers insights into the rationale behind these choices, the project's archit
 
 This document presents installation and demonstration instructions.
 
-*(adapt all of the following to your project, changing to the specific Linux distributions, programming languages, libraries, etc)*
+<!-- *(adapt all of the following to your project, changing to the specific Linux distributions, programming languages, libraries, etc)* -->
 
 ## Installation
 
@@ -34,7 +34,7 @@ To see the project in action, it is necessary to setup a virtual environment, wi
 
 The following diagram shows the networks and machines:
 
-![Infrastructure](https://github.com/tecnico-sec/a16-joao-daniel-simen/blob/main/network/Infrastructure.png)
+![Infrastructure](network/Infrastructure.png)
 
 ### Prerequisites
 
@@ -56,13 +56,13 @@ Inside each machine, use Git to obtain a copy of all the scripts and code.
 $ git clone https://github.com/tecnico-sec/a16-joao-daniel-simen.git
 ```
 
-Next we have custom instructions for each machine.
+Next we have custom instructions for each machine. For additional networking configuration info look into the network/ folder. Each machine has its own folder with the network configuration that should be pasted into /etc/network/interfaces in the machines.
 
-#### Machine 1
+#### Machine VM1
 
 This machine runs the database. It runs PostgreSQL 14.10 and has a databaseconnector written in Java. The database acts as can act as a server with custum code written for this purpose. 
 
-*(describe what kind of software runs on this machine, e.g. a database server (PostgreSQL 16.1))*
+<!-- *(describe what kind of software runs on this machine, e.g. a database server (PostgreSQL 16.1))* -->
 
 To verify psql version:
 
@@ -169,10 +169,30 @@ sudo mvn compile exec:java -Dmainclass=client.SimpleHttpClient
 
 
 
-*(give a tour of the best features of the application; add screenshots when relevant)*
+We will only look at the client terminal for this demonstration, but the application server and database can also provide you with some useful print statements for more insigth. This demo is ran on localhost, so the terminal will look slightly different than on the virtual machines. However, the functionality will remain the same.  
+
+1. Create user and post your first song. An example song can be found in resources/music.json. 
+![Login](img/Login_and_post.png)
+In this command sequence, we have created a user "client1" with password "password". We have posted the song "resources/music.json" and named it "my_song". We can see print staments showing the cryptographic operations. 
+2. Now the user can ask for the song in the database pressing the option "1":
+![Get_song](img/Get_song.png)
+The user asks for the song name "my_song" which we entered earlier and recieves it after. The user can decide where in the song he/she wants to start, and only the neccessary decryption will be executed. As you can see the HMAC Tags are compared, and in this case equal. 
+3. Finally, we will demonstrate the family sharing concept. First we need to create a new client, in this case with username "client2". Then we will create the family using either client(in this case client1). Then an invite needs to be sent to the server. The client joining will need to join the family by entering the username of the family leader(client1) and are then a part of the family sharing.  
+
+client1:
+![Get_song](img/Client1_create_family.png)
+client2:
+![Get_song](img/Client2_join_family.png)
+
+To check the members of a family, all members can enter "5". Now the family member will be able to share all songs entered by any of the members. For authenticity the family key will be used instead of the long-term key (inital secret of each client). 
+
+The application is made to demonstrate the functionality in a simple form. Som edge cases might lead to crashes on any part of the communication. 
 
 
-*(IMPORTANT: show evidence of the security mechanisms in action; show message payloads, print relevant messages, perform simulated attacks to show the defenses in action, etc.)*
+<!-- *(give a tour of the best features of the application; add screenshots when relevant)*
+
+
+*(IMPORTANT: show evidence of the security mechanisms in action; show message payloads, print relevant messages, perform simulated attacks to show the defenses in action, etc.)* -->
 
 This concludes the demonstration.
 
@@ -182,7 +202,7 @@ This concludes the demonstration.
 
 - [Java 11.0.16.1](https://openjdk.java.net/)
 - [Maven 3.9.5](https://maven.apache.org/)
-- Java built in libraries for I/O, SQL, networking and security
+- Java built in libraries for I/O, SQL, networking and crypto
 
 ### Versioning
 We use [SemVer](http://semver.org/) for versioning.  

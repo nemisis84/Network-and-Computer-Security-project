@@ -1,0 +1,10 @@
+# Add nameserver:
+sudo nano /etc/resolv.conf
+# Add in file:
+nameserver: 8.8.8.8
+
+# If interface is mssing from machine(local IP):
+sudo ifconfig eth0 192.168.*.*/24 up
+
+# Add default gateway if ping not working(router IP):
+sudo ip route add default via 192.168.*.*
