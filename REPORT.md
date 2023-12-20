@@ -155,14 +155,21 @@ Additionaly, we added the concept of family sharing, where individual users can 
 
 #### 2.3.2. Attacker Model
 
-In terms of what is trusted, the database is fully trusted, as it does not verify anything, if a request is made to the database, the one sending requests (server), has already been completely verified.
-The server is partially trusted, since it has a lot of verifications.
-The users themselfs, are treated as untrusted, since they don't access the database directly, and need pass through all the server's verifications, aswell as requiring all the different security keys.
-Anyone who's coming from outside / unregistered / an attacker are untrusted. They shouldn't even be able to pass through the firewall and hence in theory can't do anything. If they somehow gain access to the server as normal users, they can't do anything either since everything is encrypted with key's and they can't access other users' songs, since the server verifies everything. The HMAC + AES is a good overall combiation, but we are very vulnerable to a lot of attacks. 
+In terms of what is trusted, the database is fully trusted, as it does not verify anything, if a request is made to the database, the one sending requests (server), has already been completely verified. The server is fully trusted, as it handles every part of the application with no restrictions and are created and maintained the developers and network managers. 
 
-For example, if a machine is compromised, not only the client using that machine would be compromised, but all the family. The attacker could easily get access to the family key, gaining access to all the victim's songs, and would be able to delete them from the victim's database which would also affect the family.
+The users are treated as untrusted, since they don't access the database directly, and need pass through the server's verifications, as well as requiring the different security keys.  In addition, there are no limitation for who can become a user of the system which means that the clients remain untrusted. 
 
-Since we don't have HTTPS/TLS, our credentials are being sent in plain text. This way, if any attacker has access to the connection, for example from a man in the middle attack, the attacker could gain access to the client's login information, and delete the songs etc.
+There are multiple vulnerabilities in our system:
+
+1. If one a machine is compromised for some reason(related or unrelated to our application), will not only the client using that machine would be compromised, but all the family. The attacker will have access to the family key and gaini access to all the victim's songs. The attacker would be able to delete, get and post songs and thereby impact the rest of the family members.
+
+2. Since we don't have HTTPS/TLS, our credentials are being sent in plain text. This way, if any attacker sniffs the inital packages it can impersonate the user and do CRUD operations. 
+
+3. Another downside by not using HTTPS is the lack of a digital certificate from the server, making it possible for anyone to impersonate the server. This could lead to the server beeing able to do extensive attacks on the clients, because it is able to return malicous code in the request responses to the client. This includes installing rootkits at the client and adding the user to a botnet. The attacker could also imperonate the user as in 2. 
+
+4. As no timestamp, sequence number or challenge/response pattern are added will both the client and server be suseptable for replay attacks.
+
+5. Perfect forward secrecy are not provided as the key exchange don't use a method such as DH. As previously mentioned is this not a big consern as we are dealing with non-sensitive data. If our long-term keys at some point is exposed, all our previously communication can be decrypted as long as the packets containing the session keys were captured. 
 
 
 <!-- (_Define who is fully trusted, partially trusted, or untrusted._) -->
@@ -171,15 +178,21 @@ Since we don't have HTTPS/TLS, our credentials are being sent in plain text. Thi
 
 #### 2.3.3. Solution Design and Implementation
 
-We didn't have to redesign in terms of encryption. We had HMAC + CTR in mind from the beginning, to be able to provide the highest security level and complete this challenge. This solution allows us to be able to decrypt in parallell, meaning different part of the encryption can be encrypted independently, allowing for users to quickly start in the middle of an audio stream while still ensuring security.
+We didn't have to redesign in terms of encryption. We had CTR in mind from the beginning, to be able to provide a good user experience. This solution allows us to be able to decrypt in parallel, meaning different parts of the encryption can be encrypted independently, allowing users to quickly start in the middle of an audio stream while still ensuring security. 
 
-In terms of the families, all we had to do was create a new family key, our implementation allowed for an easy adaptation with this addition.
+The implementation can be found in API_client.java. The user gets the option of choosing which ciphered block in the song it wants to start. In real life, this is not user-friendly as a slider (like used in Spotify) is more user-friendly. In addition, a song separated by blocks and not time is not very user-friendly. The user provides a block in a given range, and we will return the part of the song from that block.
 
-The communication entities are the database, the router, the server and the client. The client can exchange information with the server, while this connection is secured by the router. The server can then connect to the database and do what the client asked for. The messages themselfs don't diverge too much. The client requests a connection to the server, the router verifies this connection is from a legit client and allows for communication between them. The client requests something to be done(post song, get song, etc), the server receives this request and forwards it to the database, which will then execute said request, if possible. After this the database will send the result to the server, where the information will then be updated to the client.
+For the family-sharing feature, we have two sequence diagrams below. To add some more context we have included a sequence diagram showing a user being created, posting a song, requesting a song and deleting a song.
 
-(This diagram is here so we don't forget to do the other one!!!)
-----------------------------------------------------------------
-![Infrastructure](/network/Infrastructure.png)
+The communication entities are the database, the router, the server and the client. The client can exchange information with the server and the server sends requests to the DB when needed. When a client requests something to be done(post song, get song, delete song), the server receives this request, handles it and forwards it to the database. The database will, if possible, execute said request and return data or operation status to the application server. Finally, the response will be forwarded to the client.
+
+![Infrastructure](img/normal_sequence.png)
+
+For the family sharing, we assume that client 1 and client 2 have already connected and posted content to the database. Client 1 creates a family, which will result in a family key being created. As previously mentioned will this key replace the shared secret in the protect operations. This means it will be used for creating the HMAC tag and the inner encryption. of the music data. To add members to the family, client 1 needs to send an invite to the respective clients (client 2 in this case). This invite is not forwarded to the clients, and in a real-world application, it should be forwarded so the clients are aware of the invite. After the invite is sent, client 2 can accept the invite and join the family. This will lead to their data being merged in the database, and having entries belonging to the family. The family key will then be shared with client 2. Now all songs are posted previously and from this point be available to both clients. 
+
+
+
+![Infrastructure](img/family.png)
 
 <!-- (_Explain how your team redesigned and extended the solution to meet the security challenge, including key distribution and other security measures._)
 
