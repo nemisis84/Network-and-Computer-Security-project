@@ -372,7 +372,7 @@ public class SimpleHttpClient {
 
     public static void main(String[] args) throws Exception {
         SimpleHttpClient client = new SimpleHttpClient();
-        String applicationServer = "192.168.2.4:80";
+        String applicationServer = "192.168.1.1:80";
         client.CLI(applicationServer);
     }
 }

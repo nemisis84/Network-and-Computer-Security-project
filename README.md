@@ -56,7 +56,7 @@ Inside each machine, use Git to obtain a copy of all the scripts and code.
 $ git clone https://github.com/tecnico-sec/a16-joao-daniel-simen.git
 ```
 
-Next we have custom instructions for each machine. For additional networking configuration info look into the network/ folder. Each machine has its own folder with the network configuration that should be pasted into /etc/network/interfaces in the machines.
+Next we have custom instructions for each machine. For additional networking configuration info look into the network/ folder. Each machine has its own folder with the network configuration that should be pasted into /etc/network/interfaces in the machines. If you want to pull the repo or do installs after building the repo, you will need to add nameserver 8.8.8.8 in sudo nano /etc/resolv.conf and create an interface from VM2 to the internet using NAT. The commands for this can be found in networking/VM2/NAT.txt
 
 #### Machine VM1
 
@@ -67,14 +67,14 @@ This machine runs the database. It runs PostgreSQL 14.10 and has a databaseconne
 To verify psql version:
 
 ```sh
-$ psql --version
+psql --version
 ```
-This should return 14.10.
+This should return 16.1.
 
 To run database and open the DB shell you need to run this: 
 ```sh
-sudo -u postgres psql
 sudo service postgresql start
+sudo -u postgres psql
 ```
 Opens psql shell. Change password:
 ```sh
