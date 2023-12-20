@@ -2,7 +2,7 @@
 
 ## 1. Introduction
 
-Our buisniess scenario is the GrooveGalaxy. We have created a simple application with a focus on security, testability and low effort on user experience. There are three main parts of the project; secure document, infrastructure and the security challenge. For the secure document AES and HMAC are used to provide confidentiality and authenticity, as those were the requirements given in the project description. Furthermore, we used HTTP for communication between clients and the application server and between the application server and the database(DB). To make our system even more secure we have implemented a firewall on the router which connects the application server and database with the "world". In the security challenge, we have implemented a family key shared among the family clients in a given family. Finally, we have implemented playback of audio such that users can quickly skip to a certain point in a song. This is enabled by the properties of the CTR mode used in the AES encryption. Underneath, you can see the architecture of our network:
+Our buisness scenario is the GrooveGalaxy. We have created a simple application with a focus on security, testability and low effort on user experience. There are three main parts of the project: secure document, infrastructure and the security challenge. For the secure document AES and HMAC are used to provide confidentiality and authenticity, as those were the requirements given in the project description. Furthermore, we used HTTP for communication between clients and the application server and between the application server and the database(DB). To make our system even more secure we have implemented a firewall on the router which connects the application server and database with the "world". In the security challenge, we have implemented a family key shared among the family clients in a given family. Finally, we have implemented playback of audio such that users can quickly skip to a certain point in a song. This is enabled by the properties of the CTR mode used in the AES encryption. Underneath, you can see the architecture of our network:
 
 <!-- (_Provide a brief overview of your project, including the business scenario and the main components: secure documents, infrastructure, and security challenge._)
 
@@ -16,9 +16,9 @@ Our buisniess scenario is the GrooveGalaxy. We have created a simple application
 
 We start with the assumption that we have one shared secret for each user shared between the user and the application server. For this challenge, we were asked to provide authenticity of the song data and confidentiality between the server and the owner. 
 
-To ensure authenticity we use HMAC. In HMAC a secret is XORed with some constants, concatenated with the message and hashed. This produces a unique tag, which only can be produced by having the same message input, secret and hashing algorithm. We create the tag using SHA256, a secure hashing algorithm. 
+To ensure authenticity we use HMAC. In HMAC a secret is XORed with some constants, concatenated with the message and hashed. This produces a unique tag, which can only be produced by having the same message input, secret and hashing algorithm. We create the tag using SHA256, a secure hashing algorithm. 
 
-For confidentiality use the recognized symmetric key encryption algorithm AES. This is a secure way of encrypting data, assuming the implementation is good. We used CTR and no padding. No padding is necessary when we use the CTR mode. The CTR mode has the property of being able to decrypt in parallel, meaning different parts of the encryption can be encrypted independently and simultaneously. This property is especially desired in the case of songs as it allows us the decrypt only certain parts. This allows us to quickly encrypt the part of the song that is listened to, skipping encryption of the previous parts when the user skips to a certain part of the song. This becomes relevant later during the security challenge. 
+For confidentiality we use the recognized symmetric key encryption algorithm AES. This is a secure way of encrypting data, assuming the implementation is good. We used CTR and no padding. No padding is necessary when we use the CTR mode. The CTR mode has the property of being able to decrypt in parallel, meaning different parts of the encryption can be encrypted independently and simultaneously. This property is especially desired in the case of songs as it allows us the decrypt only certain parts. This allows us to quickly encrypt the part of the song that is listened to, skipping encryption of the previous parts when the user skips to a certain part of the song. This becomes relevant later on, during the security challenge. 
 
 For the CTR mode, we also need a unique nonce (or IV). For this, an RNG can be used to generate an IV, given that collisions are highly unlikely. For this purpose the library java.security.SecureRandom is used. Under the assumption that this PRNG is secure, this is a sound way to produce the nonce. For future reference, we will use the term IV instead of nonce. The IV is sent in cleartext with the rest of the encrypted data in a concatenated string: Ciphered content + " " + IV. The IV is used to create the uniqueness of the encryption, and it is therefore secure to send this unencrypted. 
 
@@ -54,9 +54,9 @@ For the implementation of the secure document, Java was used as it was used for 
 
 #### Protect()
 
-For the secure document part of the project, we were asked to have three main methods; protect(), unprotect() and verify(). Protect() and unprotect() are implemented twice in the code with similarities. This is due to their specific use in the entities. They can be both found in API_server.java and API_client.java. The description below will only focus on the cryptographic and security properties of the functions. 
+For the secure document part of the project, we were asked to have three main methods: protect(), unprotect() and verify(). The protect() and unprotect() methods are implemented twice in the code with similarities. This is due to their specific use in the entities. They can be found in both the API_server.java and the API_client.java. The description below will only focus on the cryptographic and security properties of the functions. 
 
-The protect() method is executed like this
+The protect() method is executed like this:
 1. Input: file to be protected, symmetric key path and session key path.
 2. Encrypt the input file using the symmetric key.
 3. Calculate the HMAC tag from the encrypted file and symmetric key.
@@ -137,7 +137,7 @@ Additionally, using session keys allows us to provide forward secrecy if additio
 
 In our case, the session key is shared just by encrypting it with the long-term key. This means that we are not providing forward secrecy or protection against replay attacks. In a real-world application, we would recommend using Diffie-Hellman. We would also recommend adding a mechanism for protection against replay attacks such as implementing either a timestamp, challenge or sequence number.
 
-For the communication between the application server and DB, no encryption is used. Both the DB's network and application server's network are privat and seperated from the outside world, meaning that the risk of packet sniffing is reduced. In addition, this data is not sensitive at all, as it only contains content with possible copy rigth claims. Due to these reasons, remain this communication unprotected.
+For the communication between the application server and DB, no encryption is used. Both the DB's network and application server's network are private and separated from the outside world, meaning that the risk of packet sniffing is reduced. In addition, this data is not sensitive at all, as it only contains content with possible copy rigth claims. Due to these reasons, remain this communication unprotected.
 
 <!-- (_Discuss how server communications were secured, including the secure channel solutions implemented and any challenges encountered._)
 
