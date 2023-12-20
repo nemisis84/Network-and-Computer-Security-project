@@ -52,9 +52,7 @@ For the implementation of the secure document, Java was used as it was used for 
 - java.crypto.* for IV, key generation, HMAC and ciphering
 - java.security.* for RNG and key representation. 
 
-#### Protect()
-
-For the secure document part of the project, we were asked to have three main methods: protect(), unprotect() and verify(). The protect() and unprotect() methods are implemented twice in the code with similarities. This is due to their specific use in the entities. They can be found in both the API_server.java and the API_client.java. The description below will only focus on the cryptographic and security properties of the functions. 
+For the secure document part of the project, we were asked to have three main methods: protect(), unprotect() and check(). The protect() and unprotect() methods are implemented twice in the code with similarities. This is due to their specific use in the entities. They can be found in both the API_server.java and the API_client.java. The description below will only focus on the cryptographic and security properties of the functions. 
 
 The protect() method is executed like this:
 1. Input: file to be protected, symmetric key path and session key path.
@@ -89,7 +87,7 @@ The check() method is used in the unprotect method in the application because it
 #### 2.2.1. Network and Machine Setup
 We have a total of 4 VMs in our [Infrastructure](network/Infrastructure.png); Client(s), application server, router and database server. 
 
-For the communication between the instances, we use HTTP. We made all communications using Java libraries. No major framework was used. As we wanted control over the security and the information flow we think this was the best option. Many frameworks handle a lot of the security properties for you, which for the most part is good, but for this project did not make sense. Using simple libraries allowed us to do all the changes we wanted, without managing the configuration and setup of a framework. Using a framework such as Spring Boot was a considered option. 
+For the communication between the instances, we use HTTP. All communication is created from our Java code and the used Java libraries. No major framework was used. As we wanted control over the security and the information flow we think this was the best option. Many frameworks handle a lot of the security properties for you, which for the most part is good, but for this project did not make sense. Using simple libraries allowed us to do all the changes we wanted, without managing the configuration and setup of a framework. Using a lightweight framework such as Spring Boot was considered. 
 
 As for the chosen communication protocol, we choose HTTP, because of its familiarity and properties. For a client sending a request in a client-server communication, HTTP is the go-to protocol used in technology today. This easily allows us to request operations which can execute the CRUD operations. One thing to be aware of is that we did not enable clients to update data in the database, as songs are usually immutable. 
 
@@ -98,7 +96,7 @@ We did not implement HTTPS, meaning HTTP with TLS. This is a downside, and with 
 We will now explain the technology and reasoning for each participant:
 
 ##### Client
-An HTTP client class is made for asking for songs, adding songs and deleting songs. Built using mainly java.net.http.* packages. A CLI is also provided. This lightweight version of a client was implemented with a focus on being adaptable to a changing application and network. A web interface could also be implemented, but as it would need to be implemented with the security classes already made in Java, this would lead to more complexity. For the project, a simple CLI is sufficient to illustrate the security properties of the application. 
+An HTTP client class is made for asking for songs, adding songs and deleting songs. Built using mainly java.net.http.* packages. A CLI is also provided. This lightweight version of a client was implemented with a focus on being adaptable to a changing application. A web interface could also be implemented, but as it would need to be implemented with the security classes already made in Java, this would lead to more complexity. For the project, a simple CLI is sufficient to illustrate the security properties of the application. 
 
 ##### Application Server
 
@@ -118,14 +116,14 @@ We chose PostgreSQL as our database due to its open-source nature and simplicity
 
 #### Firewall
 One of the ways to secure both the database server and application server was the use of a firewall at the router. The applied rules can be found in /network/VM2/firewall. We explicitly only allow these communications:
-- Any computer can access the application server with HTTP (port 80).
+- Any computer can access the application server with HTTP (port 80) on its IP 192.168.1.1.
 - The application server can communicate with established HTTP connections.
 - The application server can initiate an HTTP connection with the database server.
 - The database server can communicate with an established HTTP connection with the application server.
 - All other communication won't be forwarded by the router.
 - No communication to the router will be accepted. 
 
-This leads to only the application server being exposed to the outside world, while the database can only be accessed by the application server. 
+This leads to only the application server being exposed to the outside world, while the database can only be accessed by the application server. Another viable option could be to expose the router IP and redirect it to the application server, or accept any requests sent to application server network and redirecting all traffic to the specific IP of the application server using NAT tables.  
 
 #### Session keys and user system
 
@@ -133,11 +131,11 @@ As the application and requirements expanded, we implemented key distribution. F
 
 Furthermore, we implemented a session key as this would not expose the long-term key in the same way as if it had been used to encrypt communication. If a long-term key is compromised, it is no longer useful. However, if a session key is compromised, we could simply just create a new session key and share it using the long-term key. Also, the longer a key is in use, the easier it is to perform cryptoanalysis, which further emphasises the importance of using session keys. 
 
-Additionally, using session keys allows us to provide forward secrecy if additional protocols are added. This means that the exposure of the long-term key won't compromise past session keys. Simply using a long-term key to share session keys doesn't provide forward secrecy, but together with, for instance, Diffie-Hellman key exchange perfect forward secrecy is achieved. This would be overkill for the scope of this project, both because of the time aspect and because the privacy required of our data is not the highest.  
+Additionally, using session keys allows us to provide forward secrecy if additional protocols are added. This means that the exposure of the long-term key won't compromise past session keys. Simply using a long-term key to share session keys doesn't provide forward secrecy, but together with, for instance, Diffie-Hellman key exchange perfect forward secrecy is achieved. This would be overkill for the scope of this project, both because of the time aspect and because the privacy required of our data is not very high.  
 
 In our case, the session key is shared just by encrypting it with the long-term key. This means that we are not providing forward secrecy or protection against replay attacks. In a real-world application, we would recommend using Diffie-Hellman. We would also recommend adding a mechanism for protection against replay attacks such as implementing either a timestamp, challenge or sequence number.
 
-For the communication between the application server and DB, no encryption is used. Both the DB's network and application server's network are private and separated from the outside world, meaning that the risk of packet sniffing is reduced. In addition, this data is not sensitive at all, as it only contains content with possible copy rigth claims. Due to these reasons, remain this communication unprotected.
+For the communication between the application server and DB, no encryption is used. Both the DB's network and application server's network are private and separated from the outside world, meaning that the risk of packet sniffing is reduced. In addition, this data is not sensitive at all, as it only contains content with possible copy rigth claims. Due to these reasons, this communication remains unprotected.
 
 <!-- (_Discuss how server communications were secured, including the secure channel solutions implemented and any challenges encountered._)
 
@@ -147,7 +145,7 @@ For the communication between the application server and DB, no encryption is us
 
 #### 2.3.1. Challenge Overview
 
-For this challenge we were supposed to enable playpack in an efficent way so the user can skip to a certain part of the song. This makes our previous choice of CTR important, as this enables parallell encryption. Had we used CBC for instance, would this not be possible as it must be done sequentially. To use this property we needed to find a way to grab certain blocks of the encryption and decrypt them. This is different than we did before, as we by default decrypt from start to finish. To solve this challenge only code on the client side was changed. You could argue that we only need to encrypt certain parts of the song on the server side. However, that would mean that the user need to include the playback time in the get request itself, which in many cases is unreasonable. Also, what if the user wants to suddenly start the song at the start? Then we will need to do a new request, thereby adding additional time before the song is ready. Even though we in our application only allow the user to choose a certain point in the song once, this having the whole song and only encrypting what we need it the most reasonable choise. 
+For this challenge we were supposed to enable playpack in an efficent way so the user can skip to a certain part of the song. This makes our previous choice of CTR important, as this enables parallell encryption. Had we used CBC for instance, would this not be possible as it must be done sequentially. To use this property we needed to find a way to grab certain blocks of the encryption and decrypt them. This is different than we did before, as we by default decrypt from start to finish. To solve this challenge only code on the client side was changed. You could argue that we only need to encrypt certain parts of the song on the server side. However, that would mean that the user need to include the playback time in the get request itself, which in many cases is unreasonable. Also, what if the user wants to suddenly start the song at the start? Then we will need to do a new request, thereby adding additional time before the song is ready. In our solution, we only allow the user to choose a certain point in the song once. However, this illustrates how we can efficently decrypt only parts of the song, and is suitable for demonstration purposes. 
 
 Additionaly, we added the concept of family sharing, where individual users can be members of the same family, and a protected song is accessible to all family members without modification. Each user still keeps their own secret key, but we also adds the consept of a family key shared among all members of a family. Only invited people can be a part of a family and the family key replaces the secret key when checking for authenticity of the document. You could also do this without a family key, just allowing users in a given family to access the songs other family members has in the DB. However, this does not provide the authenticity we want when requesting songs, and thus a family key solution was implemented. 
 
@@ -155,15 +153,13 @@ Additionaly, we added the concept of family sharing, where individual users can 
 
 #### 2.3.2. Attacker Model
 
-In terms of what is trusted, the database is fully trusted, as it does not verify anything, if a request is made to the database, the one sending requests (server), has already been completely verified. The server is fully trusted, as it handles every part of the application with no restrictions and are created and maintained the developers and network managers. 
-
-The users are treated as untrusted, since they don't access the database directly, and need pass through the server's verifications, as well as requiring the different security keys.  In addition, there are no limitation for who can become a user of the system which means that the clients remain untrusted. 
+In terms of what is trusted, the database is fully trusted, as it is fully controlled by us and has access to all the data. The server is fully trusted, as it handles every part of the application with no restrictions and are created and maintained the developers and network managers. The users are treated as untrusted, since they don't access the database directly, and need pass through the server's verifications to access the data. The clients also requiring the different security keys to get permission to their subset of all the available data. In addition, there are no limitation for who can become a user of the system which means that the clients remain untrusted. 
 
 There are multiple vulnerabilities in our system:
 
 1. If one a machine is compromised for some reason(related or unrelated to our application), will not only the client using that machine would be compromised, but all the family. The attacker will have access to the family key and gaini access to all the victim's songs. The attacker would be able to delete, get and post songs and thereby impact the rest of the family members.
 
-2. Since we don't have HTTPS/TLS, our credentials are being sent in plain text. This way, if any attacker sniffs the inital packages it can impersonate the user and do CRUD operations. 
+2. Since we don't have HTTPS/TLS, our credentials are being sent in plain text. This way, if any attacker sniffs the inital packages it can impersonate the user and do CRUD operations. As there is an assumption that the server and clients start with a shared secret, this is not a consern in our application, but for a real application you will need a way to share your inital keys in a secure matter. 
 
 3. Another downside by not using HTTPS is the lack of a digital certificate from the server, making it possible for anyone to impersonate the server. This could lead to the server beeing able to do extensive attacks on the clients, because it is able to return malicous code in the request responses to the client. This includes installing rootkits at the client and adding the user to a botnet. The attacker could also imperonate the user as in 2. 
 
@@ -204,7 +200,7 @@ We have created a simple application where a user can post and request music. A 
 
 The communication between a server and a client is encrypted using AES to provide confidentiality. In addition, an HMAC tag is added to provide authenticity. Session keys are created and sent using the long-term shared secret, providing less exposure to the long-term secret. A family can share songs, and the authenticity is ensured by using a family key held by all entities of the family. When calculating the HMAC tag the long-term key is replaced with the family key. To provide a better user experience(at least in theory) we can start encryption at the start of each block from the CTR mode. This makes it possible for the user to skip songs quicker because it doesn't need to decrypt all the content before the point the user skipped to. 
 
-Overall, the application has multiple vulnerabilities and weaknesses. The application interface would be improved by providing more error handling and a web interface. Furthermore, replay attacks are possible as we don't have a timestamp, challenge or sequence number. Other vulnerabilities are no forward secrecy and possible server impostering attacks. 
+Overall, the application has multiple vulnerabilities and weaknesses. The application interface would be improved by providing more error handling and a web interface. Furthermore, replay attacks are possible as we don't have a timestamp, challenge or sequence number. Other vulnerabilities are no forward secrecy, server impostering and user impostering. 
 
 What we managed to achieve was authenticity from the HMAC, confidentiality (as long as keys are not compromised) from the AES encryption and a restrictive network not allowing unexpected requests because of our firewall. 
 
