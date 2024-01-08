@@ -3,5 +3,5 @@ sysctl net.ipv4.conf.all.forwarding
 sudo iptables -P FORWARD ACCEPT    # Defines default policy for FORWARD
 sudo iptables -F FORWARD           # Flushes all the rules from chain FORWARD
 sudo iptables -t nat -F
-sudo iptables -t nat -A POSTROUTING  -o eth3 -j MASQUERADE
+sudo iptables -t nat -A POSTROUTING  -o eth3 -j MASQUEping googRADE
 

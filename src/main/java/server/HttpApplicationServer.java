@@ -203,6 +203,7 @@ public class HttpApplicationServer {
             String sessionkeypath = "Clients/" + client + "/session.key";
             if(type.equals("NORMAL")){
                 enckeypath = "Clients/" + client + "/secret.key";
+                System.out.println()
             }
             else{
                 f = new File("Clients/" + client + "/family.txt");

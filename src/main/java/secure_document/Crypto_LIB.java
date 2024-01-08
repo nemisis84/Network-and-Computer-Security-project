@@ -79,7 +79,7 @@ public class Crypto_LIB {
         
         String cipher = cipherString + " " + iv_send + " " + cnt_send;
 
-        System.err.println("Encrypted data using key: " +secretKey+ "\nand IV: "+iv_send + "\nStart of cipher: "+cipherString.substring(0, 20)+"...");
+        System.err.println("Encrypting data using key: " +secretKey+ "\nStart of cipher: "+cipherString.substring(0, 20)+"...");
 
         return cipher;
         
@@ -89,7 +89,7 @@ public class Crypto_LIB {
 
         Key secretKey = readSecretKey(keyPath);
         
-        System.err.println("Decrypting data using key: " +secretKey+ "\nand IV: "+IV + "\nStart of cipher: "+target.substring(0, 20)+"...");
+        System.err.println("Decrypting data using key: " +secretKey+ "\nStart of cipher: "+target.substring(0, 20)+"...");
 
         byte[] encryptedText = Base64.getDecoder().decode(target);
         byte[] iv = Base64.getDecoder().decode(IV);
